@@ -40,3 +40,11 @@ tasks {
     dependsOn("generateJflex")
   }
 }
+
+tasks.test {
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test)
+}
