@@ -302,6 +302,7 @@ jobs:
             **/jitdump.*.dmp
           if-no-files-found: ignore
 
+      - run: ls instrumentation-api/build/reports/jacoco/
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
         with:
