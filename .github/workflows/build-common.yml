@@ -302,6 +302,11 @@ jobs:
             **/jitdump.*.dmp
           if-no-files-found: ignore
 
+      - name: Uploading dist
+        uses: actions/upload-artifact@v2
+        with:
+          name: artefact
+          path: ./instrumentation-api/build/reports/jacoco/
       - run: ls instrumentation-api/build/reports/jacoco/
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
