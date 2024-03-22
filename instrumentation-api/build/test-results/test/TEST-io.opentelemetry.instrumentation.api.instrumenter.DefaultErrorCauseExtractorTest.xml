@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.instrumenter.DefaultErrorCauseExtractorTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:15" hostname="luyanbo-MBP.local" time="0.056">
+  <properties/>
+  <testcase name="[1] class java.util.concurrent.ExecutionException" classname="io.opentelemetry.instrumentation.api.instrumenter.DefaultErrorCauseExtractorTest" time="0.041"/>
+  <testcase name="[2] class java.util.concurrent.CompletionException" classname="io.opentelemetry.instrumentation.api.instrumenter.DefaultErrorCauseExtractorTest" time="0.001"/>
+  <testcase name="[3] class java.lang.reflect.InvocationTargetException" classname="io.opentelemetry.instrumentation.api.instrumenter.DefaultErrorCauseExtractorTest" time="0.001"/>
+  <testcase name="[4] class java.lang.reflect.UndeclaredThrowableException" classname="io.opentelemetry.instrumentation.api.instrumenter.DefaultErrorCauseExtractorTest" time="0.001"/>
+  <testcase name="notWrapped()" classname="io.opentelemetry.instrumentation.api.instrumenter.DefaultErrorCauseExtractorTest" time="0.001"/>
+  <testcase name="multipleUnwraps()" classname="io.opentelemetry.instrumentation.api.instrumenter.DefaultErrorCauseExtractorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpClientAttributesExtractorBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.http</a> &gt; <span class="el_source">HttpClientAttributesExtractorBuilder.java</span></div><h1>HttpClientAttributesExtractorBuilder.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.http;
+
+import static java.util.Collections.emptyList;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.instrumentation.api.instrumenter.AttributesExtractor;
+import io.opentelemetry.instrumentation.api.instrumenter.InstrumenterBuilder;
+import io.opentelemetry.instrumentation.api.internal.HttpConstants;
+import io.opentelemetry.instrumentation.api.semconv.network.internal.AddressAndPortExtractor;
+import io.opentelemetry.instrumentation.api.semconv.network.internal.InternalNetworkAttributesExtractor;
+import io.opentelemetry.instrumentation.api.semconv.network.internal.InternalServerAttributesExtractor;
+import io.opentelemetry.instrumentation.api.semconv.network.internal.ServerAddressAndPortExtractor;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.ToIntFunction;
+
+/**
+ * A builder of {@link HttpClientAttributesExtractor}.
+ *
+ * @since 2.0.0
+ */
+public final class HttpClientAttributesExtractorBuilder&lt;REQUEST, RESPONSE&gt; {
+
+  final HttpClientAttributesGetter&lt;REQUEST, RESPONSE&gt; httpAttributesGetter;
+
+  final AddressAndPortExtractor&lt;REQUEST&gt; serverAddressAndPortExtractor;
+<span class="fc" id="L35">  List&lt;String&gt; capturedRequestHeaders = emptyList();</span>
+<span class="fc" id="L36">  List&lt;String&gt; capturedResponseHeaders = emptyList();</span>
+<span class="fc" id="L37">  Set&lt;String&gt; knownMethods = HttpConstants.KNOWN_METHODS;</span>
+<span class="fc" id="L38">  ToIntFunction&lt;Context&gt; resendCountIncrementer = HttpClientRequestResendCount::getAndIncrement;</span>
+
+  HttpClientAttributesExtractorBuilder(
+<span class="fc" id="L41">      HttpClientAttributesGetter&lt;REQUEST, RESPONSE&gt; httpAttributesGetter) {</span>
+<span class="fc" id="L42">    this.httpAttributesGetter = httpAttributesGetter;</span>
+<span class="fc" id="L43">    serverAddressAndPortExtractor =</span>
+        new ServerAddressAndPortExtractor&lt;&gt;(
+            httpAttributesGetter, new HostAddressAndPortExtractor&lt;&gt;(httpAttributesGetter));
+<span class="fc" id="L46">  }</span>
+
+  /**
+   * Configures the HTTP request headers that will be captured as span attributes as described in &lt;a
+   * href=&quot;https://github.com/open-telemetry/semantic-conventions/blob/v1.23.0/docs/http/http-spans.md#http-client&quot;&gt;HTTP
+   * semantic conventions&lt;/a&gt;.
+   *
+   * &lt;p&gt;The HTTP request header values will be captured under the {@code http.request.header.&lt;key&gt;}
+   * attribute key. The {@code &lt;key&gt;} part in the attribute key is the lowercase header name.
+   *
+   * @param requestHeaders A list of HTTP header names.
+   */
+  @CanIgnoreReturnValue
+  public HttpClientAttributesExtractorBuilder&lt;REQUEST, RESPONSE&gt; setCapturedRequestHeaders(
+      List&lt;String&gt; requestHeaders) {
+<span class="fc" id="L61">    this.capturedRequestHeaders = new ArrayList&lt;&gt;(requestHeaders);</span>
+<span class="fc" id="L62">    return this;</span>
+  }
+
+  /**
+   * Configures the HTTP response headers that will be captured as span attributes as described in
+   * &lt;a
+   * href=&quot;https://github.com/open-telemetry/semantic-conventions/blob/v1.23.0/docs/http/http-spans.md#common-attributes&quot;&gt;HTTP
+   * semantic conventions&lt;/a&gt;.
+   *
+   * &lt;p&gt;The HTTP response header values will be captured under the {@code
+   * http.response.header.&lt;key&gt;} attribute key. The {@code &lt;key&gt;} part in the attribute key is the
+   * lowercase header name.
+   *
+   * @param responseHeaders A list of HTTP header names.
+   */
+  @CanIgnoreReturnValue
+  public HttpClientAttributesExtractorBuilder&lt;REQUEST, RESPONSE&gt; setCapturedResponseHeaders(
+      List&lt;String&gt; responseHeaders) {
+<span class="fc" id="L80">    this.capturedResponseHeaders = new ArrayList&lt;&gt;(responseHeaders);</span>
+<span class="fc" id="L81">    return this;</span>
+  }
+
+  /**
+   * Configures the extractor to recognize an alternative set of HTTP request methods.
+   *
+   * &lt;p&gt;By default, this extractor defines &quot;known&quot; methods as the ones listed in &lt;a
+   * href=&quot;https://www.rfc-editor.org/rfc/rfc9110.html#name-methods&quot;&gt;RFC9110&lt;/a&gt; and the PATCH
+   * method defined in &lt;a href=&quot;https://www.rfc-editor.org/rfc/rfc5789.html&quot;&gt;RFC5789&lt;/a&gt;. If an
+   * unknown method is encountered, the extractor will use the value {@value HttpConstants#_OTHER}
+   * instead of it and put the original value in an extra {@code http.request.method_original}
+   * attribute.
+   *
+   * &lt;p&gt;Note: calling this method &lt;b&gt;overrides&lt;/b&gt; the default known method sets completely; it does
+   * not supplement it.
+   *
+   * @param knownMethods A set of recognized HTTP request methods.
+   */
+  @CanIgnoreReturnValue
+  public HttpClientAttributesExtractorBuilder&lt;REQUEST, RESPONSE&gt; setKnownMethods(
+      Set&lt;String&gt; knownMethods) {
+<span class="fc" id="L102">    this.knownMethods = new HashSet&lt;&gt;(knownMethods);</span>
+<span class="fc" id="L103">    return this;</span>
+  }
+
+  // visible for tests
+  @CanIgnoreReturnValue
+  HttpClientAttributesExtractorBuilder&lt;REQUEST, RESPONSE&gt; setResendCountIncrementer(
+      ToIntFunction&lt;Context&gt; resendCountIncrementer) {
+<span class="fc" id="L110">    this.resendCountIncrementer = resendCountIncrementer;</span>
+<span class="fc" id="L111">    return this;</span>
+  }
+
+  /**
+   * Returns a new {@link HttpClientAttributesExtractor} with the settings of this {@link
+   * HttpClientAttributesExtractorBuilder}.
+   *
+   * @see InstrumenterBuilder#addAttributesExtractor(AttributesExtractor)
+   */
+  public AttributesExtractor&lt;REQUEST, RESPONSE&gt; build() {
+<span class="fc" id="L121">    return new HttpClientAttributesExtractor&lt;&gt;(this);</span>
+  }
+
+  InternalNetworkAttributesExtractor&lt;REQUEST, RESPONSE&gt; buildNetworkExtractor() {
+<span class="fc" id="L125">    return new InternalNetworkAttributesExtractor&lt;&gt;(</span>
+        httpAttributesGetter,
+        // network.{transport,type} are opt-in, network.protocol.* have HTTP-specific logic
+        /* captureProtocolAttributes= */ false,
+        /* captureLocalSocketAttributes= */ false);
+  }
+
+  InternalServerAttributesExtractor&lt;REQUEST&gt; buildServerExtractor() {
+<span class="fc" id="L133">    return new InternalServerAttributesExtractor&lt;&gt;(serverAddressAndPortExtractor);</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

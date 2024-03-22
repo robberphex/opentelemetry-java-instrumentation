@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" tests="38" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:20" hostname="luyanbo-MBP.local" time="0.071">
+  <properties/>
+  <testcase name="[1] PURGE" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.002"/>
+  <testcase name="[2] not a method really" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.0"/>
+  <testcase name="[1] TRACE" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.0"/>
+  <testcase name="[2] HEAD" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.0"/>
+  <testcase name="[3] DELETE" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[4] POST" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[5] GET" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[6] CONNECT" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[7] OPTIONS" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[8] PATCH" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[9] PUT" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[1] only" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[2] custom" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[3] methods" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[4] allowed" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="shouldExtractErrorType_httpStatusCode()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="normal()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.002"/>
+  <testcase name="shouldExtractServerAddressAndPortFromForwardedHostHeader()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="shouldExtractErrorType_exceptionClassName()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="shouldPreferUrlSchemeFromForwardedHeader()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="shouldExtractServerAddressAndPortFromAuthorityPseudoHeader()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[1] get" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[2] Get" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="shouldExtractServerAddressAndPortFromForwardedHeader()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.002"/>
+  <testcase name="shouldExtractPeerAddressEvenIfItDuplicatesClientAddress()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.002"/>
+  <testcase name="shouldExtractServerAddressAndPortFromHostHeader()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.002"/>
+  <testcase name="[1] TRACE" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[2] HEAD" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[3] DELETE" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.002"/>
+  <testcase name="[4] POST" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[5] GET" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[6] CONNECT" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[7] OPTIONS" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="[8] PATCH" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.0"/>
+  <testcase name="[9] PUT" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="shouldExtractProtocolNameDifferentFromHttp()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="shouldExtractErrorType_other()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <testcase name="shouldExtractErrorType_getter()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAttributesExtractorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,1596 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConcurrentLinkedHashMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.internal.cache.concurrentlinkedhashmap</a> &gt; <span class="el_source">ConcurrentLinkedHashMap.java</span></div><h1>ConcurrentLinkedHashMap.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+// Includes work from:
+/*
+ * Copyright 2010 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.opentelemetry.instrumentation.api.internal.cache.concurrentlinkedhashmap;
+
+import static io.opentelemetry.instrumentation.api.internal.cache.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.IDLE;
+import static io.opentelemetry.instrumentation.api.internal.cache.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.PROCESSING;
+import static io.opentelemetry.instrumentation.api.internal.cache.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.REQUIRED;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
+
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.util.AbstractCollection;
+import java.util.AbstractMap;
+import java.util.AbstractQueue;
+import java.util.AbstractSet;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import javax.annotation.concurrent.GuardedBy;
+import javax.annotation.concurrent.Immutable;
+import javax.annotation.concurrent.ThreadSafe;
+
+/**
+ * A hash table supporting full concurrency of retrievals, adjustable expected concurrency for
+ * updates, and a maximum capacity to bound the map by. This implementation differs from {@link
+ * ConcurrentHashMap} in that it maintains a page replacement algorithm that is used to evict an
+ * entry when the map has exceeded its capacity. Unlike the &lt;tt&gt;Java Collections Framework&lt;/tt&gt;,
+ * this map does not have a publicly visible constructor and instances are created through a {@link
+ * Builder}.
+ *
+ * &lt;p&gt;An entry is evicted from the map when the &lt;tt&gt;weighted capacity&lt;/tt&gt; exceeds its &lt;tt&gt;maximum
+ * weighted capacity&lt;/tt&gt; threshold. A {@link EntryWeigher} determines how many units of capacity
+ * that an entry consumes. The default weigher assigns each value a weight of &lt;tt&gt;1&lt;/tt&gt; to bound
+ * the map by the total number of key-value pairs. A map that holds collections may choose to weigh
+ * values by the number of elements in the collection and bound the map by the total number of
+ * elements that it contains. A change to a value that modifies its weight requires that an update
+ * operation is performed on the map.
+ *
+ * &lt;p&gt;An {@link EvictionListener} may be supplied for notification when an entry is evicted from the
+ * map. This listener is invoked on a caller's thread and will not block other threads from
+ * operating on the map. An implementation should be aware that the caller's thread will not expect
+ * long execution times or failures as a side effect of the listener being notified. Execution
+ * safety and a fast turn around time can be achieved by performing the operation asynchronously,
+ * such as by submitting a task to an {@link java.util.concurrent.ExecutorService}.
+ *
+ * &lt;p&gt;The &lt;tt&gt;concurrency level&lt;/tt&gt; determines the number of threads that can concurrently modify
+ * the table. Using a significantly higher or lower value than needed can waste space or lead to
+ * thread contention, but an estimate within an order of magnitude of the ideal value does not
+ * usually have a noticeable impact. Because placement in hash tables is essentially random, the
+ * actual concurrency will vary.
+ *
+ * &lt;p&gt;This class and its views and iterators implement all of the &lt;em&gt;optional&lt;/em&gt; methods of the
+ * {@link Map} and {@link Iterator} interfaces.
+ *
+ * &lt;p&gt;Like {@link java.util.Hashtable} but unlike {@link HashMap}, this class does &lt;em&gt;not&lt;/em&gt;
+ * allow &lt;tt&gt;null&lt;/tt&gt; to be used as a key or value. Unlike {@link java.util.LinkedHashMap}, this
+ * class does &lt;em&gt;not&lt;/em&gt; provide predictable iteration order. A snapshot of the keys and entries
+ * may be obtained in ascending and descending order of retention.
+ *
+ * @author ben.manes@gmail.com (Ben Manes)
+ * @param &lt;K&gt; the type of keys maintained by this map
+ * @param &lt;V&gt; the type of mapped values
+ * @see &lt;a href=&quot;http://code.google.com/p/concurrentlinkedhashmap/&quot;&gt;
+ *     http://code.google.com/p/concurrentlinkedhashmap/&lt;/a&gt;
+ */
+@ThreadSafe
+public final class ConcurrentLinkedHashMap&lt;K, V&gt; extends AbstractMap&lt;K, V&gt;
+    implements ConcurrentMap&lt;K, V&gt;, Serializable {
+
+  /*
+   * This class performs a best-effort bounding of a ConcurrentHashMap using a
+   * page-replacement algorithm to determine which entries to evict when the
+   * capacity is exceeded.
+   *
+   * The page replacement algorithm's data structures are kept eventually
+   * consistent with the map. An update to the map and recording of reads may
+   * not be immediately reflected on the algorithm's data structures. These
+   * structures are guarded by a lock and operations are applied in batches to
+   * avoid lock contention. The penalty of applying the batches is spread across
+   * threads so that the amortized cost is slightly higher than performing just
+   * the ConcurrentHashMap operation.
+   *
+   * A memento of the reads and writes that were performed on the map are
+   * recorded in buffers. These buffers are drained at the first opportunity
+   * after a write or when the read buffer exceeds a threshold size. The reads
+   * are recorded in a lossy buffer, allowing the reordering operations to be
+   * discarded if the draining process cannot keep up. Due to the concurrent
+   * nature of the read and write operations a strict policy ordering is not
+   * possible, but is observably strict when single threaded.
+   *
+   * Due to a lack of a strict ordering guarantee, a task can be executed
+   * out-of-order, such as a removal followed by its addition. The state of the
+   * entry is encoded within the value's weight.
+   *
+   * Alive: The entry is in both the hash-table and the page replacement policy.
+   * This is represented by a positive weight.
+   *
+   * Retired: The entry is not in the hash-table and is pending removal from the
+   * page replacement policy. This is represented by a negative weight.
+   *
+   * Dead: The entry is not in the hash-table and is not in the page replacement
+   * policy. This is represented by a weight of zero.
+   *
+   * The Least Recently Used page replacement algorithm was chosen due to its
+   * simplicity, high hit rate, and ability to be implemented with O(1) time
+   * complexity.
+   */
+
+  /** The number of CPUs */
+<span class="fc" id="L145">  static final int NCPU = Runtime.getRuntime().availableProcessors();</span>
+
+  /** The maximum weighted capacity of the map. */
+  static final long MAXIMUM_CAPACITY = Long.MAX_VALUE - Integer.MAX_VALUE;
+
+  /** The number of read buffers to use. */
+<span class="fc" id="L151">  static final int NUMBER_OF_READ_BUFFERS = ceilingNextPowerOfTwo(NCPU);</span>
+
+  /** Mask value for indexing into the read buffers. */
+<span class="fc" id="L154">  static final int READ_BUFFERS_MASK = NUMBER_OF_READ_BUFFERS - 1;</span>
+
+  /** The number of pending read operations before attempting to drain. */
+  static final int READ_BUFFER_THRESHOLD = 32;
+
+  /** The maximum number of read operations to perform per amortized drain. */
+  static final int READ_BUFFER_DRAIN_THRESHOLD = 2 * READ_BUFFER_THRESHOLD;
+
+  /** The maximum number of pending reads per buffer. */
+  static final int READ_BUFFER_SIZE = 2 * READ_BUFFER_DRAIN_THRESHOLD;
+
+  /** Mask value for indexing into the read buffer. */
+  static final int READ_BUFFER_INDEX_MASK = READ_BUFFER_SIZE - 1;
+
+  /** The maximum number of write operations to perform per amortized drain. */
+  static final int WRITE_BUFFER_DRAIN_THRESHOLD = 16;
+
+  /** A queue that discards all entries. */
+<span class="fc" id="L172">  static final Queue&lt;?&gt; DISCARDING_QUEUE = new DiscardingQueue();</span>
+
+  static int ceilingNextPowerOfTwo(int x) {
+    // From Hacker's Delight, Chapter 3, Harry S. Warren Jr.
+<span class="fc" id="L176">    return 1 &lt;&lt; (Integer.SIZE - Integer.numberOfLeadingZeros(x - 1));</span>
+  }
+
+  // The backing data store holding the key-value associations
+  final ConcurrentMap&lt;K, Node&lt;K, V&gt;&gt; data;
+  final int concurrencyLevel;
+
+  // These fields provide support to bound the map by a maximum capacity
+  @GuardedBy(&quot;evictionLock&quot;)
+  final long[] readBufferReadCount;
+
+  @GuardedBy(&quot;evictionLock&quot;)
+  final LinkedDeque&lt;Node&lt;K, V&gt;&gt; evictionDeque;
+
+  @GuardedBy(&quot;evictionLock&quot;) // must write under lock
+  final AtomicLong weightedSize;
+
+  @GuardedBy(&quot;evictionLock&quot;) // must write under lock
+  final AtomicLong capacity;
+
+  final Lock evictionLock;
+  final Queue&lt;Runnable&gt; writeBuffer;
+  final AtomicLong[] readBufferWriteCount;
+  final AtomicLong[] readBufferDrainAtWriteCount;
+  final AtomicReference&lt;Node&lt;K, V&gt;&gt;[][] readBuffers;
+
+  final AtomicReference&lt;DrainStatus&gt; drainStatus;
+  final EntryWeigher&lt;? super K, ? super V&gt; weigher;
+
+  // These fields provide support for notifying a listener.
+  final Queue&lt;Node&lt;K, V&gt;&gt; pendingNotifications;
+  final EvictionListener&lt;K, V&gt; listener;
+
+  transient Set&lt;K&gt; keySet;
+  transient Collection&lt;V&gt; values;
+  transient Set&lt;Entry&lt;K, V&gt;&gt; entrySet;
+
+  /** Creates an instance based on the builder's configuration. */
+  @SuppressWarnings({&quot;unchecked&quot;, &quot;cast&quot;, &quot;rawtypes&quot;})
+<span class="fc" id="L215">  private ConcurrentLinkedHashMap(Builder&lt;K, V&gt; builder) {</span>
+    // The data store and its maximum capacity
+<span class="fc" id="L217">    concurrencyLevel = builder.concurrencyLevel;</span>
+<span class="fc" id="L218">    capacity = new AtomicLong(Math.min(builder.capacity, MAXIMUM_CAPACITY));</span>
+<span class="fc" id="L219">    data = new ConcurrentHashMap&lt;&gt;(builder.initialCapacity, 0.75f, concurrencyLevel);</span>
+
+    // The eviction support
+<span class="fc" id="L222">    weigher = builder.weigher;</span>
+<span class="fc" id="L223">    evictionLock = new ReentrantLock();</span>
+<span class="fc" id="L224">    weightedSize = new AtomicLong();</span>
+<span class="fc" id="L225">    evictionDeque = new LinkedDeque&lt;&gt;();</span>
+<span class="fc" id="L226">    writeBuffer = new ConcurrentLinkedQueue&lt;&gt;();</span>
+<span class="fc" id="L227">    drainStatus = new AtomicReference&lt;&gt;(IDLE);</span>
+
+<span class="fc" id="L229">    readBufferReadCount = new long[NUMBER_OF_READ_BUFFERS];</span>
+<span class="fc" id="L230">    readBufferWriteCount = new AtomicLong[NUMBER_OF_READ_BUFFERS];</span>
+<span class="fc" id="L231">    readBufferDrainAtWriteCount = new AtomicLong[NUMBER_OF_READ_BUFFERS];</span>
+<span class="fc" id="L232">    readBuffers = new AtomicReference[NUMBER_OF_READ_BUFFERS][READ_BUFFER_SIZE];</span>
+<span class="fc bfc" id="L233" title="All 2 branches covered.">    for (int i = 0; i &lt; NUMBER_OF_READ_BUFFERS; i++) {</span>
+<span class="fc" id="L234">      readBufferWriteCount[i] = new AtomicLong();</span>
+<span class="fc" id="L235">      readBufferDrainAtWriteCount[i] = new AtomicLong();</span>
+<span class="fc" id="L236">      readBuffers[i] = new AtomicReference[READ_BUFFER_SIZE];</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">      for (int j = 0; j &lt; READ_BUFFER_SIZE; j++) {</span>
+<span class="fc" id="L238">        readBuffers[i][j] = new AtomicReference&lt;&gt;();</span>
+      }
+    }
+
+    // The notification queue and listener
+<span class="fc" id="L243">    listener = builder.listener;</span>
+<span class="fc" id="L244">    pendingNotifications =</span>
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">        (listener == DiscardingListener.INSTANCE)</span>
+<span class="fc" id="L246">            ? (Queue&lt;Node&lt;K, V&gt;&gt;) DISCARDING_QUEUE</span>
+<span class="pc" id="L247">            : new ConcurrentLinkedQueue&lt;&gt;();</span>
+<span class="fc" id="L248">  }</span>
+
+  /** Ensures that the object is not null. */
+  static void checkNotNull(Object o) {
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">    if (o == null) {</span>
+<span class="nc" id="L253">      throw new NullPointerException();</span>
+    }
+<span class="fc" id="L255">  }</span>
+
+  /** Ensures that the argument expression is true. */
+  static void checkArgument(boolean expression) {
+<span class="pc bpc" id="L259" title="1 of 2 branches missed.">    if (!expression) {</span>
+<span class="nc" id="L260">      throw new IllegalArgumentException();</span>
+    }
+<span class="fc" id="L262">  }</span>
+
+  /** Ensures that the state expression is true. */
+  static void checkState(boolean expression) {
+<span class="pc bpc" id="L266" title="1 of 2 branches missed.">    if (!expression) {</span>
+<span class="nc" id="L267">      throw new IllegalStateException();</span>
+    }
+<span class="fc" id="L269">  }</span>
+
+  /* ---------------- Eviction Support -------------- */
+
+  /**
+   * Retrieves the maximum weighted capacity of the map.
+   *
+   * @return the maximum weighted capacity
+   */
+  public long capacity() {
+<span class="nc" id="L279">    return capacity.get();</span>
+  }
+
+  /**
+   * Sets the maximum weighted capacity of the map and eagerly evicts entries until it shrinks to
+   * the appropriate size.
+   *
+   * @param capacity the maximum weighted capacity of the map
+   * @throws IllegalArgumentException if the capacity is negative
+   */
+  public void setCapacity(long capacity) {
+<span class="nc bnc" id="L290" title="All 2 branches missed.">    checkArgument(capacity &gt;= 0);</span>
+<span class="nc" id="L291">    evictionLock.lock();</span>
+    try {
+<span class="nc" id="L293">      this.capacity.lazySet(Math.min(capacity, MAXIMUM_CAPACITY));</span>
+<span class="nc" id="L294">      drainBuffers();</span>
+<span class="nc" id="L295">      evict();</span>
+    } finally {
+<span class="nc" id="L297">      evictionLock.unlock();</span>
+    }
+<span class="nc" id="L299">    notifyListener();</span>
+<span class="nc" id="L300">  }</span>
+
+  /** Determines whether the map has exceeded its capacity. */
+  @GuardedBy(&quot;evictionLock&quot;)
+  boolean hasOverflowed() {
+<span class="fc bfc" id="L305" title="All 2 branches covered.">    return weightedSize.get() &gt; capacity.get();</span>
+  }
+
+  /**
+   * Evicts entries from the map while it exceeds the capacity and appends evicted entries to the
+   * notification queue for processing.
+   */
+  @GuardedBy(&quot;evictionLock&quot;)
+  void evict() {
+    // Attempts to evict entries from the map if it exceeds the maximum
+    // capacity. If the eviction fails due to a concurrent removal of the
+    // victim, that removal may cancel out the addition that triggered this
+    // eviction. The victim is eagerly unlinked before the removal task so
+    // that if an eviction is still required then a new victim will be chosen
+    // for removal.
+<span class="fc bfc" id="L320" title="All 2 branches covered.">    while (hasOverflowed()) {</span>
+<span class="fc" id="L321">      final Node&lt;K, V&gt; node = evictionDeque.poll();</span>
+
+      // If weighted values are used, then the pending operations will adjust
+      // the size to reflect the correct weight
+<span class="pc bpc" id="L325" title="1 of 2 branches missed.">      if (node == null) {</span>
+<span class="nc" id="L326">        return;</span>
+      }
+
+      // Notify the listener only if the entry was evicted
+<span class="pc bpc" id="L330" title="1 of 2 branches missed.">      if (data.remove(node.key, node)) {</span>
+<span class="fc" id="L331">        pendingNotifications.add(node);</span>
+      }
+
+<span class="fc" id="L334">      makeDead(node);</span>
+<span class="fc" id="L335">    }</span>
+<span class="fc" id="L336">  }</span>
+
+  /**
+   * Performs the post-processing work required after a read.
+   *
+   * @param node the entry in the page replacement policy
+   */
+  void afterRead(Node&lt;K, V&gt; node) {
+<span class="fc" id="L344">    final int bufferIndex = readBufferIndex();</span>
+<span class="fc" id="L345">    final long writeCount = recordRead(bufferIndex, node);</span>
+<span class="fc" id="L346">    drainOnReadIfNeeded(bufferIndex, writeCount);</span>
+<span class="fc" id="L347">    notifyListener();</span>
+<span class="fc" id="L348">  }</span>
+
+  /** Returns the index to the read buffer to record into. */
+  static int readBufferIndex() {
+    // A buffer is chosen by the thread's id so that tasks are distributed in a
+    // pseudo evenly manner. This helps avoid hot entries causing contention
+    // due to other threads trying to append to the same buffer.
+<span class="fc" id="L355">    return ((int) Thread.currentThread().getId()) &amp; READ_BUFFERS_MASK;</span>
+  }
+
+  /**
+   * Records a read in the buffer and return its write count.
+   *
+   * @param bufferIndex the index to the chosen read buffer
+   * @param node the entry in the page replacement policy
+   * @return the number of writes on the chosen read buffer
+   */
+  long recordRead(int bufferIndex, Node&lt;K, V&gt; node) {
+    // The location in the buffer is chosen in a racy fashion as the increment
+    // is not atomic with the insertion. This means that concurrent reads can
+    // overlap and overwrite one another, resulting in a lossy buffer.
+<span class="fc" id="L369">    final AtomicLong counter = readBufferWriteCount[bufferIndex];</span>
+<span class="fc" id="L370">    final long writeCount = counter.get();</span>
+<span class="fc" id="L371">    counter.lazySet(writeCount + 1);</span>
+
+<span class="fc" id="L373">    final int index = (int) (writeCount &amp; READ_BUFFER_INDEX_MASK);</span>
+<span class="fc" id="L374">    readBuffers[bufferIndex][index].lazySet(node);</span>
+
+<span class="fc" id="L376">    return writeCount;</span>
+  }
+
+  /**
+   * Attempts to drain the buffers if it is determined to be needed when post-processing a read.
+   *
+   * @param bufferIndex the index to the chosen read buffer
+   * @param writeCount the number of writes on the chosen read buffer
+   */
+  void drainOnReadIfNeeded(int bufferIndex, long writeCount) {
+<span class="fc" id="L386">    final long pending = (writeCount - readBufferDrainAtWriteCount[bufferIndex].get());</span>
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">    final boolean delayable = (pending &lt; READ_BUFFER_THRESHOLD);</span>
+<span class="fc" id="L388">    final DrainStatus status = drainStatus.get();</span>
+<span class="pc bpc" id="L389" title="1 of 2 branches missed.">    if (status.shouldDrainBuffers(delayable)) {</span>
+<span class="nc" id="L390">      tryToDrainBuffers();</span>
+    }
+<span class="fc" id="L392">  }</span>
+
+  /**
+   * Performs the post-processing work required after a write.
+   *
+   * @param task the pending operation to be applied
+   */
+  void afterWrite(Runnable task) {
+<span class="fc" id="L400">    writeBuffer.add(task);</span>
+<span class="fc" id="L401">    drainStatus.lazySet(REQUIRED);</span>
+<span class="fc" id="L402">    tryToDrainBuffers();</span>
+<span class="fc" id="L403">    notifyListener();</span>
+<span class="fc" id="L404">  }</span>
+
+  /**
+   * Attempts to acquire the eviction lock and apply the pending operations, up to the amortized
+   * threshold, to the page replacement policy.
+   */
+  void tryToDrainBuffers() {
+<span class="pc bpc" id="L411" title="1 of 2 branches missed.">    if (evictionLock.tryLock()) {</span>
+      try {
+<span class="fc" id="L413">        drainStatus.lazySet(PROCESSING);</span>
+<span class="fc" id="L414">        drainBuffers();</span>
+      } finally {
+<span class="fc" id="L416">        drainStatus.compareAndSet(PROCESSING, IDLE);</span>
+<span class="fc" id="L417">        evictionLock.unlock();</span>
+      }
+    }
+<span class="fc" id="L420">  }</span>
+
+  /** Drains the read and write buffers up to an amortized threshold. */
+  @GuardedBy(&quot;evictionLock&quot;)
+  void drainBuffers() {
+<span class="fc" id="L425">    drainReadBuffers();</span>
+<span class="fc" id="L426">    drainWriteBuffer();</span>
+<span class="fc" id="L427">  }</span>
+
+  /** Drains the read buffers, each up to an amortized threshold. */
+  @GuardedBy(&quot;evictionLock&quot;)
+  void drainReadBuffers() {
+<span class="fc" id="L432">    final int start = (int) Thread.currentThread().getId();</span>
+<span class="fc" id="L433">    final int end = start + NUMBER_OF_READ_BUFFERS;</span>
+<span class="fc bfc" id="L434" title="All 2 branches covered.">    for (int i = start; i &lt; end; i++) {</span>
+<span class="fc" id="L435">      drainReadBuffer(i &amp; READ_BUFFERS_MASK);</span>
+    }
+<span class="fc" id="L437">  }</span>
+
+  /** Drains the read buffer up to an amortized threshold. */
+  @GuardedBy(&quot;evictionLock&quot;)
+  void drainReadBuffer(int bufferIndex) {
+<span class="fc" id="L442">    final long writeCount = readBufferWriteCount[bufferIndex].get();</span>
+<span class="pc bpc" id="L443" title="1 of 2 branches missed.">    for (int i = 0; i &lt; READ_BUFFER_DRAIN_THRESHOLD; i++) {</span>
+<span class="fc" id="L444">      final int index = (int) (readBufferReadCount[bufferIndex] &amp; READ_BUFFER_INDEX_MASK);</span>
+<span class="fc" id="L445">      final AtomicReference&lt;Node&lt;K, V&gt;&gt; slot = readBuffers[bufferIndex][index];</span>
+<span class="fc" id="L446">      final Node&lt;K, V&gt; node = slot.get();</span>
+<span class="fc bfc" id="L447" title="All 2 branches covered.">      if (node == null) {</span>
+<span class="fc" id="L448">        break;</span>
+      }
+
+<span class="fc" id="L451">      slot.lazySet(null);</span>
+<span class="fc" id="L452">      applyRead(node);</span>
+<span class="fc" id="L453">      readBufferReadCount[bufferIndex]++;</span>
+    }
+<span class="fc" id="L455">    readBufferDrainAtWriteCount[bufferIndex].lazySet(writeCount);</span>
+<span class="fc" id="L456">  }</span>
+
+  /** Updates the node's location in the page replacement policy. */
+  @GuardedBy(&quot;evictionLock&quot;)
+  void applyRead(Node&lt;K, V&gt; node) {
+    // An entry may be scheduled for reordering despite having been removed.
+    // This can occur when the entry was concurrently read while a writer was
+    // removing it. If the entry is no longer linked then it does not need to
+    // be processed.
+<span class="pc bpc" id="L465" title="1 of 2 branches missed.">    if (evictionDeque.contains(node)) {</span>
+<span class="fc" id="L466">      evictionDeque.moveToBack(node);</span>
+    }
+<span class="fc" id="L468">  }</span>
+
+  /** Drains the read buffer up to an amortized threshold. */
+  @GuardedBy(&quot;evictionLock&quot;)
+  void drainWriteBuffer() {
+<span class="pc bpc" id="L473" title="1 of 2 branches missed.">    for (int i = 0; i &lt; WRITE_BUFFER_DRAIN_THRESHOLD; i++) {</span>
+<span class="fc" id="L474">      final Runnable task = writeBuffer.poll();</span>
+<span class="fc bfc" id="L475" title="All 2 branches covered.">      if (task == null) {</span>
+<span class="fc" id="L476">        break;</span>
+      }
+<span class="fc" id="L478">      task.run();</span>
+    }
+<span class="fc" id="L480">  }</span>
+
+  /**
+   * Attempts to transition the node from the &lt;tt&gt;alive&lt;/tt&gt; state to the &lt;tt&gt;retired&lt;/tt&gt; state.
+   *
+   * @param node the entry in the page replacement policy
+   * @param expect the expected weighted value
+   * @return if successful
+   */
+  boolean tryToRetire(Node&lt;K, V&gt; node, WeightedValue&lt;V&gt; expect) {
+<span class="nc bnc" id="L490" title="All 2 branches missed.">    if (expect.isAlive()) {</span>
+<span class="nc" id="L491">      final WeightedValue&lt;V&gt; retired = new WeightedValue&lt;&gt;(expect.value, -expect.weight);</span>
+<span class="nc" id="L492">      return node.compareAndSet(expect, retired);</span>
+    }
+<span class="nc" id="L494">    return false;</span>
+  }
+
+  /**
+   * Atomically transitions the node from the &lt;tt&gt;alive&lt;/tt&gt; state to the &lt;tt&gt;retired&lt;/tt&gt; state, if
+   * a valid transition.
+   *
+   * @param node the entry in the page replacement policy
+   */
+  void makeRetired(Node&lt;K, V&gt; node) {
+    for (; ; ) {
+<span class="fc" id="L505">      final WeightedValue&lt;V&gt; current = node.get();</span>
+<span class="pc bpc" id="L506" title="1 of 2 branches missed.">      if (!current.isAlive()) {</span>
+<span class="nc" id="L507">        return;</span>
+      }
+<span class="fc" id="L509">      final WeightedValue&lt;V&gt; retired = new WeightedValue&lt;&gt;(current.value, -current.weight);</span>
+<span class="pc bpc" id="L510" title="1 of 2 branches missed.">      if (node.compareAndSet(current, retired)) {</span>
+<span class="fc" id="L511">        return;</span>
+      }
+<span class="nc" id="L513">    }</span>
+  }
+
+  /**
+   * Atomically transitions the node to the &lt;tt&gt;dead&lt;/tt&gt; state and decrements the
+   * &lt;tt&gt;weightedSize&lt;/tt&gt;.
+   *
+   * @param node the entry in the page replacement policy
+   */
+  @GuardedBy(&quot;evictionLock&quot;)
+  void makeDead(Node&lt;K, V&gt; node) {
+    for (; ; ) {
+<span class="fc" id="L525">      WeightedValue&lt;V&gt; current = node.get();</span>
+<span class="fc" id="L526">      WeightedValue&lt;V&gt; dead = new WeightedValue&lt;&gt;(current.value, 0);</span>
+<span class="pc bpc" id="L527" title="1 of 2 branches missed.">      if (node.compareAndSet(current, dead)) {</span>
+<span class="fc" id="L528">        weightedSize.lazySet(weightedSize.get() - Math.abs(current.weight));</span>
+<span class="fc" id="L529">        return;</span>
+      }
+<span class="nc" id="L531">    }</span>
+  }
+
+  /** Notifies the listener of entries that were evicted. */
+  void notifyListener() {
+    Node&lt;K, V&gt; node;
+<span class="pc bpc" id="L537" title="1 of 2 branches missed.">    while ((node = pendingNotifications.poll()) != null) {</span>
+<span class="nc" id="L538">      listener.onEviction(node.key, node.getValue());</span>
+    }
+<span class="fc" id="L540">  }</span>
+
+  /** Adds the node to the page replacement policy. */
+  final class AddTask implements Runnable {
+    final Node&lt;K, V&gt; node;
+    final int weight;
+
+<span class="fc" id="L547">    AddTask(Node&lt;K, V&gt; node, int weight) {</span>
+<span class="fc" id="L548">      this.weight = weight;</span>
+<span class="fc" id="L549">      this.node = node;</span>
+<span class="fc" id="L550">    }</span>
+
+    @Override
+    @GuardedBy(&quot;evictionLock&quot;)
+    public void run() {
+<span class="fc" id="L555">      weightedSize.lazySet(weightedSize.get() + weight);</span>
+
+      // ignore out-of-order write operations
+<span class="pc bpc" id="L558" title="1 of 2 branches missed.">      if (node.get().isAlive()) {</span>
+<span class="fc" id="L559">        evictionDeque.add(node);</span>
+<span class="fc" id="L560">        evict();</span>
+      }
+<span class="fc" id="L562">    }</span>
+  }
+
+  /** Removes a node from the page replacement policy. */
+  final class RemovalTask implements Runnable {
+    final Node&lt;K, V&gt; node;
+
+<span class="fc" id="L569">    RemovalTask(Node&lt;K, V&gt; node) {</span>
+<span class="fc" id="L570">      this.node = node;</span>
+<span class="fc" id="L571">    }</span>
+
+    @Override
+    @GuardedBy(&quot;evictionLock&quot;)
+    public void run() {
+      // add may not have been processed yet
+<span class="fc" id="L577">      evictionDeque.remove(node);</span>
+<span class="fc" id="L578">      makeDead(node);</span>
+<span class="fc" id="L579">    }</span>
+  }
+
+  /** Updates the weighted size and evicts an entry on overflow. */
+  final class UpdateTask implements Runnable {
+    final int weightDifference;
+    final Node&lt;K, V&gt; node;
+
+<span class="nc" id="L587">    public UpdateTask(Node&lt;K, V&gt; node, int weightDifference) {</span>
+<span class="nc" id="L588">      this.weightDifference = weightDifference;</span>
+<span class="nc" id="L589">      this.node = node;</span>
+<span class="nc" id="L590">    }</span>
+
+    @Override
+    @GuardedBy(&quot;evictionLock&quot;)
+    public void run() {
+<span class="nc" id="L595">      weightedSize.lazySet(weightedSize.get() + weightDifference);</span>
+<span class="nc" id="L596">      applyRead(node);</span>
+<span class="nc" id="L597">      evict();</span>
+<span class="nc" id="L598">    }</span>
+  }
+
+  /* ---------------- Concurrent Map Support -------------- */
+
+  @Override
+  public boolean isEmpty() {
+<span class="nc" id="L605">    return data.isEmpty();</span>
+  }
+
+  @Override
+  public int size() {
+<span class="fc" id="L610">    return data.size();</span>
+  }
+
+  /**
+   * Returns the weighted size of this map.
+   *
+   * @return the combined weight of the values in this map
+   */
+  public long weightedSize() {
+<span class="nc" id="L619">    return Math.max(0, weightedSize.get());</span>
+  }
+
+  @Override
+  public void clear() {
+<span class="nc" id="L624">    evictionLock.lock();</span>
+    try {
+      // Discard all entries
+      Node&lt;K, V&gt; node;
+<span class="nc bnc" id="L628" title="All 2 branches missed.">      while ((node = evictionDeque.poll()) != null) {</span>
+<span class="nc" id="L629">        data.remove(node.key, node);</span>
+<span class="nc" id="L630">        makeDead(node);</span>
+      }
+
+      // Discard all pending reads
+<span class="nc bnc" id="L634" title="All 2 branches missed.">      for (AtomicReference&lt;Node&lt;K, V&gt;&gt;[] buffer : readBuffers) {</span>
+<span class="nc bnc" id="L635" title="All 2 branches missed.">        for (AtomicReference&lt;Node&lt;K, V&gt;&gt; slot : buffer) {</span>
+<span class="nc" id="L636">          slot.lazySet(null);</span>
+        }
+      }
+
+      // Apply all pending writes
+      Runnable task;
+<span class="nc bnc" id="L642" title="All 2 branches missed.">      while ((task = writeBuffer.poll()) != null) {</span>
+<span class="nc" id="L643">        task.run();</span>
+      }
+    } finally {
+<span class="nc" id="L646">      evictionLock.unlock();</span>
+    }
+<span class="nc" id="L648">  }</span>
+
+  @Override
+  public boolean containsKey(Object key) {
+<span class="nc" id="L652">    return data.containsKey(key);</span>
+  }
+
+  @Override
+  public boolean containsValue(Object value) {
+<span class="nc" id="L657">    checkNotNull(value);</span>
+
+<span class="nc bnc" id="L659" title="All 2 branches missed.">    for (Node&lt;K, V&gt; node : data.values()) {</span>
+<span class="nc bnc" id="L660" title="All 2 branches missed.">      if (node.getValue().equals(value)) {</span>
+<span class="nc" id="L661">        return true;</span>
+      }
+<span class="nc" id="L663">    }</span>
+<span class="nc" id="L664">    return false;</span>
+  }
+
+  @Override
+  public V get(Object key) {
+<span class="fc" id="L669">    final Node&lt;K, V&gt; node = data.get(key);</span>
+<span class="fc bfc" id="L670" title="All 2 branches covered.">    if (node == null) {</span>
+<span class="fc" id="L671">      return null;</span>
+    }
+<span class="fc" id="L673">    afterRead(node);</span>
+<span class="fc" id="L674">    return node.getValue();</span>
+  }
+
+  /**
+   * Returns the value to which the specified key is mapped, or {@code null} if this map contains no
+   * mapping for the key. This method differs from {@link #get(Object)} in that it does not record
+   * the operation with the page replacement policy.
+   *
+   * @param key the key whose associated value is to be returned
+   * @return the value to which the specified key is mapped, or {@code null} if this map contains no
+   *     mapping for the key
+   * @throws NullPointerException if the specified key is null
+   */
+  public V getQuietly(Object key) {
+<span class="nc" id="L688">    final Node&lt;K, V&gt; node = data.get(key);</span>
+<span class="nc bnc" id="L689" title="All 2 branches missed.">    return (node == null) ? null : node.getValue();</span>
+  }
+
+  @Override
+  public V put(K key, V value) {
+<span class="fc" id="L694">    return put(key, value, false);</span>
+  }
+
+  @Override
+  public V putIfAbsent(K key, V value) {
+<span class="fc" id="L699">    return put(key, value, true);</span>
+  }
+
+  /**
+   * Adds a node to the list and the data store. If an existing node is found, then its value is
+   * updated if allowed.
+   *
+   * @param key key with which the specified value is to be associated
+   * @param value value to be associated with the specified key
+   * @param onlyIfAbsent a write is performed only if the key is not already associated with a value
+   * @return the prior value in the data store or null if no mapping was found
+   */
+  V put(K key, V value, boolean onlyIfAbsent) {
+<span class="fc" id="L712">    checkNotNull(key);</span>
+<span class="fc" id="L713">    checkNotNull(value);</span>
+
+<span class="fc" id="L715">    final int weight = weigher.weightOf(key, value);</span>
+<span class="fc" id="L716">    final WeightedValue&lt;V&gt; weightedValue = new WeightedValue&lt;&gt;(value, weight);</span>
+<span class="fc" id="L717">    final Node&lt;K, V&gt; node = new Node&lt;&gt;(key, weightedValue);</span>
+
+    for (; ; ) {
+<span class="fc" id="L720">      final Node&lt;K, V&gt; prior = data.putIfAbsent(node.key, node);</span>
+<span class="pc bpc" id="L721" title="1 of 2 branches missed.">      if (prior == null) {</span>
+<span class="fc" id="L722">        afterWrite(new AddTask(node, weight));</span>
+<span class="fc" id="L723">        return null;</span>
+<span class="nc bnc" id="L724" title="All 2 branches missed.">      } else if (onlyIfAbsent) {</span>
+<span class="nc" id="L725">        afterRead(prior);</span>
+<span class="nc" id="L726">        return prior.getValue();</span>
+      }
+      for (; ; ) {
+<span class="nc" id="L729">        final WeightedValue&lt;V&gt; oldWeightedValue = prior.get();</span>
+<span class="nc bnc" id="L730" title="All 2 branches missed.">        if (!oldWeightedValue.isAlive()) {</span>
+<span class="nc" id="L731">          break;</span>
+        }
+
+<span class="nc bnc" id="L734" title="All 2 branches missed.">        if (prior.compareAndSet(oldWeightedValue, weightedValue)) {</span>
+<span class="nc" id="L735">          final int weightedDifference = weight - oldWeightedValue.weight;</span>
+<span class="nc bnc" id="L736" title="All 2 branches missed.">          if (weightedDifference == 0) {</span>
+<span class="nc" id="L737">            afterRead(prior);</span>
+          } else {
+<span class="nc" id="L739">            afterWrite(new UpdateTask(prior, weightedDifference));</span>
+          }
+<span class="nc" id="L741">          return oldWeightedValue.value;</span>
+        }
+<span class="nc" id="L743">      }</span>
+<span class="nc" id="L744">    }</span>
+  }
+
+  @Override
+  public V remove(Object key) {
+<span class="fc" id="L749">    final Node&lt;K, V&gt; node = data.remove(key);</span>
+<span class="pc bpc" id="L750" title="1 of 2 branches missed.">    if (node == null) {</span>
+<span class="nc" id="L751">      return null;</span>
+    }
+
+<span class="fc" id="L754">    makeRetired(node);</span>
+<span class="fc" id="L755">    afterWrite(new RemovalTask(node));</span>
+<span class="fc" id="L756">    return node.getValue();</span>
+  }
+
+  @Override
+  public boolean remove(Object key, Object value) {
+<span class="nc" id="L761">    final Node&lt;K, V&gt; node = data.get(key);</span>
+<span class="nc bnc" id="L762" title="All 4 branches missed.">    if ((node == null) || (value == null)) {</span>
+<span class="nc" id="L763">      return false;</span>
+    }
+
+<span class="nc" id="L766">    WeightedValue&lt;V&gt; weightedValue = node.get();</span>
+    for (; ; ) {
+<span class="nc bnc" id="L768" title="All 2 branches missed.">      if (weightedValue.contains(value)) {</span>
+<span class="nc bnc" id="L769" title="All 2 branches missed.">        if (tryToRetire(node, weightedValue)) {</span>
+<span class="nc bnc" id="L770" title="All 2 branches missed.">          if (data.remove(key, node)) {</span>
+<span class="nc" id="L771">            afterWrite(new RemovalTask(node));</span>
+<span class="nc" id="L772">            return true;</span>
+          }
+        } else {
+<span class="nc" id="L775">          weightedValue = node.get();</span>
+<span class="nc bnc" id="L776" title="All 2 branches missed.">          if (weightedValue.isAlive()) {</span>
+            // retry as an intermediate update may have replaced the value with
+            // an equal instance that has a different reference identity
+<span class="nc" id="L779">            continue;</span>
+          }
+        }
+      }
+<span class="nc" id="L783">      return false;</span>
+    }
+  }
+
+  @Override
+  public V replace(K key, V value) {
+<span class="nc" id="L789">    checkNotNull(key);</span>
+<span class="nc" id="L790">    checkNotNull(value);</span>
+
+<span class="nc" id="L792">    final int weight = weigher.weightOf(key, value);</span>
+<span class="nc" id="L793">    final WeightedValue&lt;V&gt; weightedValue = new WeightedValue&lt;&gt;(value, weight);</span>
+
+<span class="nc" id="L795">    final Node&lt;K, V&gt; node = data.get(key);</span>
+<span class="nc bnc" id="L796" title="All 2 branches missed.">    if (node == null) {</span>
+<span class="nc" id="L797">      return null;</span>
+    }
+    for (; ; ) {
+<span class="nc" id="L800">      final WeightedValue&lt;V&gt; oldWeightedValue = node.get();</span>
+<span class="nc bnc" id="L801" title="All 2 branches missed.">      if (!oldWeightedValue.isAlive()) {</span>
+<span class="nc" id="L802">        return null;</span>
+      }
+<span class="nc bnc" id="L804" title="All 2 branches missed.">      if (node.compareAndSet(oldWeightedValue, weightedValue)) {</span>
+<span class="nc" id="L805">        final int weightedDifference = weight - oldWeightedValue.weight;</span>
+<span class="nc bnc" id="L806" title="All 2 branches missed.">        if (weightedDifference == 0) {</span>
+<span class="nc" id="L807">          afterRead(node);</span>
+        } else {
+<span class="nc" id="L809">          afterWrite(new UpdateTask(node, weightedDifference));</span>
+        }
+<span class="nc" id="L811">        return oldWeightedValue.value;</span>
+      }
+<span class="nc" id="L813">    }</span>
+  }
+
+  @Override
+  public boolean replace(K key, V oldValue, V newValue) {
+<span class="nc" id="L818">    checkNotNull(key);</span>
+<span class="nc" id="L819">    checkNotNull(oldValue);</span>
+<span class="nc" id="L820">    checkNotNull(newValue);</span>
+
+<span class="nc" id="L822">    final int weight = weigher.weightOf(key, newValue);</span>
+<span class="nc" id="L823">    final WeightedValue&lt;V&gt; newWeightedValue = new WeightedValue&lt;&gt;(newValue, weight);</span>
+
+<span class="nc" id="L825">    final Node&lt;K, V&gt; node = data.get(key);</span>
+<span class="nc bnc" id="L826" title="All 2 branches missed.">    if (node == null) {</span>
+<span class="nc" id="L827">      return false;</span>
+    }
+    for (; ; ) {
+<span class="nc" id="L830">      final WeightedValue&lt;V&gt; weightedValue = node.get();</span>
+<span class="nc bnc" id="L831" title="All 4 branches missed.">      if (!weightedValue.isAlive() || !weightedValue.contains(oldValue)) {</span>
+<span class="nc" id="L832">        return false;</span>
+      }
+<span class="nc bnc" id="L834" title="All 2 branches missed.">      if (node.compareAndSet(weightedValue, newWeightedValue)) {</span>
+<span class="nc" id="L835">        final int weightedDifference = weight - weightedValue.weight;</span>
+<span class="nc bnc" id="L836" title="All 2 branches missed.">        if (weightedDifference == 0) {</span>
+<span class="nc" id="L837">          afterRead(node);</span>
+        } else {
+<span class="nc" id="L839">          afterWrite(new UpdateTask(node, weightedDifference));</span>
+        }
+<span class="nc" id="L841">        return true;</span>
+      }
+<span class="nc" id="L843">    }</span>
+  }
+
+  @Override
+  public Set&lt;K&gt; keySet() {
+<span class="nc" id="L848">    final Set&lt;K&gt; ks = keySet;</span>
+<span class="nc bnc" id="L849" title="All 2 branches missed.">    return (ks == null) ? (keySet = new KeySet()) : ks;</span>
+  }
+
+  /**
+   * Returns a unmodifiable snapshot {@link Set} view of the keys contained in this map. The set's
+   * iterator returns the keys whose order of iteration is the ascending order in which its entries
+   * are considered eligible for retention, from the least-likely to be retained to the most-likely.
+   *
+   * &lt;p&gt;Beware that, unlike in {@link #keySet()}, obtaining the set is &lt;em&gt;NOT&lt;/em&gt; a constant-time
+   * operation. Because of the asynchronous nature of the page replacement policy, determining the
+   * retention ordering requires a traversal of the keys.
+   *
+   * @return an ascending snapshot view of the keys in this map
+   */
+  public Set&lt;K&gt; ascendingKeySet() {
+<span class="nc" id="L864">    return ascendingKeySetWithLimit(Integer.MAX_VALUE);</span>
+  }
+
+  /**
+   * Returns an unmodifiable snapshot {@link Set} view of the keys contained in this map. The set's
+   * iterator returns the keys whose order of iteration is the ascending order in which its entries
+   * are considered eligible for retention, from the least-likely to be retained to the most-likely.
+   *
+   * &lt;p&gt;Beware that, unlike in {@link #keySet()}, obtaining the set is &lt;em&gt;NOT&lt;/em&gt; a constant-time
+   * operation. Because of the asynchronous nature of the page replacement policy, determining the
+   * retention ordering requires a traversal of the keys.
+   *
+   * @param limit the maximum size of the returned set
+   * @return a ascending snapshot view of the keys in this map
+   * @throws IllegalArgumentException if the limit is negative
+   */
+  public Set&lt;K&gt; ascendingKeySetWithLimit(int limit) {
+<span class="nc" id="L881">    return orderedKeySet(true, limit);</span>
+  }
+
+  /**
+   * Returns an unmodifiable snapshot {@link Set} view of the keys contained in this map. The set's
+   * iterator returns the keys whose order of iteration is the descending order in which its entries
+   * are considered eligible for retention, from the most-likely to be retained to the least-likely.
+   *
+   * &lt;p&gt;Beware that, unlike in {@link #keySet()}, obtaining the set is &lt;em&gt;NOT&lt;/em&gt; a constant-time
+   * operation. Because of the asynchronous nature of the page replacement policy, determining the
+   * retention ordering requires a traversal of the keys.
+   *
+   * @return a descending snapshot view of the keys in this map
+   */
+  public Set&lt;K&gt; descendingKeySet() {
+<span class="nc" id="L896">    return descendingKeySetWithLimit(Integer.MAX_VALUE);</span>
+  }
+
+  /**
+   * Returns an unmodifiable snapshot {@link Set} view of the keys contained in this map. The set's
+   * iterator returns the keys whose order of iteration is the descending order in which its entries
+   * are considered eligible for retention, from the most-likely to be retained to the least-likely.
+   *
+   * &lt;p&gt;Beware that, unlike in {@link #keySet()}, obtaining the set is &lt;em&gt;NOT&lt;/em&gt; a constant-time
+   * operation. Because of the asynchronous nature of the page replacement policy, determining the
+   * retention ordering requires a traversal of the keys.
+   *
+   * @param limit the maximum size of the returned set
+   * @return a descending snapshot view of the keys in this map
+   * @throws IllegalArgumentException if the limit is negative
+   */
+  public Set&lt;K&gt; descendingKeySetWithLimit(int limit) {
+<span class="nc" id="L913">    return orderedKeySet(false, limit);</span>
+  }
+
+  Set&lt;K&gt; orderedKeySet(boolean ascending, int limit) {
+<span class="nc bnc" id="L917" title="All 2 branches missed.">    checkArgument(limit &gt;= 0);</span>
+<span class="nc" id="L918">    evictionLock.lock();</span>
+    try {
+<span class="nc" id="L920">      drainBuffers();</span>
+
+      final int initialCapacity =
+<span class="nc bnc" id="L923" title="All 2 branches missed.">          (weigher == Weighers.entrySingleton()) ? Math.min(limit, (int) weightedSize()) : 16;</span>
+<span class="nc" id="L924">      final Set&lt;K&gt; keys = new LinkedHashSet&lt;&gt;(initialCapacity);</span>
+      final Iterator&lt;Node&lt;K, V&gt;&gt; iterator =
+<span class="nc bnc" id="L926" title="All 2 branches missed.">          ascending ? evictionDeque.iterator() : evictionDeque.descendingIterator();</span>
+<span class="nc bnc" id="L927" title="All 4 branches missed.">      while (iterator.hasNext() &amp;&amp; (limit &gt; keys.size())) {</span>
+<span class="nc" id="L928">        keys.add(iterator.next().key);</span>
+      }
+<span class="nc" id="L930">      return unmodifiableSet(keys);</span>
+    } finally {
+<span class="nc" id="L932">      evictionLock.unlock();</span>
+    }
+  }
+
+  @Override
+  public Collection&lt;V&gt; values() {
+<span class="nc" id="L938">    final Collection&lt;V&gt; vs = values;</span>
+<span class="nc bnc" id="L939" title="All 2 branches missed.">    return (vs == null) ? (values = new Values()) : vs;</span>
+  }
+
+  @Override
+  public Set&lt;Entry&lt;K, V&gt;&gt; entrySet() {
+<span class="nc" id="L944">    final Set&lt;Entry&lt;K, V&gt;&gt; es = entrySet;</span>
+<span class="nc bnc" id="L945" title="All 2 branches missed.">    return (es == null) ? (entrySet = new EntrySet()) : es;</span>
+  }
+
+  /**
+   * Returns an unmodifiable snapshot {@link Map} view of the mappings contained in this map. The
+   * map's collections return the mappings whose order of iteration is the ascending order in which
+   * its entries are considered eligible for retention, from the least-likely to be retained to the
+   * most-likely.
+   *
+   * &lt;p&gt;Beware that obtaining the mappings is &lt;em&gt;NOT&lt;/em&gt; a constant-time operation. Because of the
+   * asynchronous nature of the page replacement policy, determining the retention ordering requires
+   * a traversal of the entries.
+   *
+   * @return a ascending snapshot view of this map
+   */
+  public Map&lt;K, V&gt; ascendingMap() {
+<span class="nc" id="L961">    return ascendingMapWithLimit(Integer.MAX_VALUE);</span>
+  }
+
+  /**
+   * Returns an unmodifiable snapshot {@link Map} view of the mappings contained in this map. The
+   * map's collections return the mappings whose order of iteration is the ascending order in which
+   * its entries are considered eligible for retention, from the least-likely to be retained to the
+   * most-likely.
+   *
+   * &lt;p&gt;Beware that obtaining the mappings is &lt;em&gt;NOT&lt;/em&gt; a constant-time operation. Because of the
+   * asynchronous nature of the page replacement policy, determining the retention ordering requires
+   * a traversal of the entries.
+   *
+   * @param limit the maximum size of the returned map
+   * @return a ascending snapshot view of this map
+   * @throws IllegalArgumentException if the limit is negative
+   */
+  public Map&lt;K, V&gt; ascendingMapWithLimit(int limit) {
+<span class="nc" id="L979">    return orderedMap(true, limit);</span>
+  }
+
+  /**
+   * Returns an unmodifiable snapshot {@link Map} view of the mappings contained in this map. The
+   * map's collections return the mappings whose order of iteration is the descending order in which
+   * its entries are considered eligible for retention, from the most-likely to be retained to the
+   * least-likely.
+   *
+   * &lt;p&gt;Beware that obtaining the mappings is &lt;em&gt;NOT&lt;/em&gt; a constant-time operation. Because of the
+   * asynchronous nature of the page replacement policy, determining the retention ordering requires
+   * a traversal of the entries.
+   *
+   * @return a descending snapshot view of this map
+   */
+  public Map&lt;K, V&gt; descendingMap() {
+<span class="nc" id="L995">    return descendingMapWithLimit(Integer.MAX_VALUE);</span>
+  }
+
+  /**
+   * Returns an unmodifiable snapshot {@link Map} view of the mappings contained in this map. The
+   * map's collections return the mappings whose order of iteration is the descending order in which
+   * its entries are considered eligible for retention, from the most-likely to be retained to the
+   * least-likely.
+   *
+   * &lt;p&gt;Beware that obtaining the mappings is &lt;em&gt;NOT&lt;/em&gt; a constant-time operation. Because of the
+   * asynchronous nature of the page replacement policy, determining the retention ordering requires
+   * a traversal of the entries.
+   *
+   * @param limit the maximum size of the returned map
+   * @return a descending snapshot view of this map
+   * @throws IllegalArgumentException if the limit is negative
+   */
+  public Map&lt;K, V&gt; descendingMapWithLimit(int limit) {
+<span class="nc" id="L1013">    return orderedMap(false, limit);</span>
+  }
+
+  Map&lt;K, V&gt; orderedMap(boolean ascending, int limit) {
+<span class="nc bnc" id="L1017" title="All 2 branches missed.">    checkArgument(limit &gt;= 0);</span>
+<span class="nc" id="L1018">    evictionLock.lock();</span>
+    try {
+<span class="nc" id="L1020">      drainBuffers();</span>
+
+      final int initialCapacity =
+<span class="nc bnc" id="L1023" title="All 2 branches missed.">          (weigher == Weighers.entrySingleton()) ? Math.min(limit, (int) weightedSize()) : 16;</span>
+<span class="nc" id="L1024">      final Map&lt;K, V&gt; map = new LinkedHashMap&lt;&gt;(initialCapacity);</span>
+      final Iterator&lt;Node&lt;K, V&gt;&gt; iterator =
+<span class="nc bnc" id="L1026" title="All 2 branches missed.">          ascending ? evictionDeque.iterator() : evictionDeque.descendingIterator();</span>
+<span class="nc bnc" id="L1027" title="All 4 branches missed.">      while (iterator.hasNext() &amp;&amp; (limit &gt; map.size())) {</span>
+<span class="nc" id="L1028">        Node&lt;K, V&gt; node = iterator.next();</span>
+<span class="nc" id="L1029">        map.put(node.key, node.getValue());</span>
+<span class="nc" id="L1030">      }</span>
+<span class="nc" id="L1031">      return unmodifiableMap(map);</span>
+    } finally {
+<span class="nc" id="L1033">      evictionLock.unlock();</span>
+    }
+  }
+
+  /** The draining status of the buffers. */
+<span class="fc" id="L1038">  enum DrainStatus {</span>
+
+    /** A drain is not taking place. */
+<span class="fc" id="L1041">    IDLE {</span>
+      @Override
+      boolean shouldDrainBuffers(boolean delayable) {
+<span class="pc bpc" id="L1044" title="1 of 2 branches missed.">        return !delayable;</span>
+      }
+    },
+
+    /** A drain is required due to a pending write modification. */
+<span class="fc" id="L1049">    REQUIRED {</span>
+      @Override
+      boolean shouldDrainBuffers(boolean delayable) {
+<span class="nc" id="L1052">        return true;</span>
+      }
+    },
+
+    /** A drain is in progress. */
+<span class="fc" id="L1057">    PROCESSING {</span>
+      @Override
+      boolean shouldDrainBuffers(boolean delayable) {
+<span class="nc" id="L1060">        return false;</span>
+      }
+    };
+
+    /**
+     * Determines whether the buffers should be drained.
+     *
+     * @param delayable if a drain should be delayed until required
+     * @return if a drain should be attempted
+     */
+    abstract boolean shouldDrainBuffers(boolean delayable);
+  }
+
+  /** A value, its weight, and the entry's status. */
+  @Immutable
+  static final class WeightedValue&lt;V&gt; {
+    final int weight;
+    final V value;
+
+<span class="fc" id="L1079">    WeightedValue(V value, int weight) {</span>
+<span class="fc" id="L1080">      this.weight = weight;</span>
+<span class="fc" id="L1081">      this.value = value;</span>
+<span class="fc" id="L1082">    }</span>
+
+    boolean contains(Object o) {
+<span class="nc bnc" id="L1085" title="All 4 branches missed.">      return (o == value) || value.equals(o);</span>
+    }
+
+    /** If the entry is available in the hash-table and page replacement policy. */
+    boolean isAlive() {
+<span class="pc bpc" id="L1090" title="1 of 2 branches missed.">      return weight &gt; 0;</span>
+    }
+
+    /**
+     * If the entry was removed from the hash-table and is awaiting removal from the page
+     * replacement policy.
+     */
+    boolean isRetired() {
+<span class="nc bnc" id="L1098" title="All 2 branches missed.">      return weight &lt; 0;</span>
+    }
+
+    /** If the entry was removed from the hash-table and the page replacement policy. */
+    boolean isDead() {
+<span class="nc bnc" id="L1103" title="All 2 branches missed.">      return weight == 0;</span>
+    }
+  }
+
+  /**
+   * A node contains the key, the weighted value, and the linkage pointers on the page-replacement
+   * algorithm's data structures.
+   */
+  @SuppressWarnings(&quot;serial&quot;)
+  static final class Node&lt;K, V&gt; extends AtomicReference&lt;WeightedValue&lt;V&gt;&gt;
+      implements LinkedDeque.Linked&lt;Node&lt;K, V&gt;&gt; {
+    final K key;
+
+    @GuardedBy(&quot;evictionLock&quot;)
+    Node&lt;K, V&gt; prev;
+
+    @GuardedBy(&quot;evictionLock&quot;)
+    Node&lt;K, V&gt; next;
+
+    /** Creates a new, unlinked node. */
+    Node(K key, WeightedValue&lt;V&gt; weightedValue) {
+<span class="fc" id="L1124">      super(weightedValue);</span>
+<span class="fc" id="L1125">      this.key = key;</span>
+<span class="fc" id="L1126">    }</span>
+
+    @Override
+    @GuardedBy(&quot;evictionLock&quot;)
+    public Node&lt;K, V&gt; getPrevious() {
+<span class="fc" id="L1131">      return prev;</span>
+    }
+
+    @Override
+    @GuardedBy(&quot;evictionLock&quot;)
+    public void setPrevious(Node&lt;K, V&gt; prev) {
+<span class="fc" id="L1137">      this.prev = prev;</span>
+<span class="fc" id="L1138">    }</span>
+
+    @Override
+    @GuardedBy(&quot;evictionLock&quot;)
+    public Node&lt;K, V&gt; getNext() {
+<span class="fc" id="L1143">      return next;</span>
+    }
+
+    @Override
+    @GuardedBy(&quot;evictionLock&quot;)
+    public void setNext(Node&lt;K, V&gt; next) {
+<span class="fc" id="L1149">      this.next = next;</span>
+<span class="fc" id="L1150">    }</span>
+
+    /** Retrieves the value held by the current &lt;tt&gt;WeightedValue&lt;/tt&gt;. */
+    V getValue() {
+<span class="fc" id="L1154">      return get().value;</span>
+    }
+  }
+
+  /** An adapter to safely externalize the keys. */
+<span class="nc" id="L1159">  final class KeySet extends AbstractSet&lt;K&gt; {</span>
+<span class="nc" id="L1160">    final ConcurrentLinkedHashMap&lt;K, V&gt; map = ConcurrentLinkedHashMap.this;</span>
+
+    @Override
+    public int size() {
+<span class="nc" id="L1164">      return map.size();</span>
+    }
+
+    @Override
+    public void clear() {
+<span class="nc" id="L1169">      map.clear();</span>
+<span class="nc" id="L1170">    }</span>
+
+    @Override
+    public Iterator&lt;K&gt; iterator() {
+<span class="nc" id="L1174">      return new KeyIterator();</span>
+    }
+
+    @Override
+    public boolean contains(Object obj) {
+<span class="nc" id="L1179">      return containsKey(obj);</span>
+    }
+
+    @Override
+    public boolean remove(Object obj) {
+<span class="nc bnc" id="L1184" title="All 2 branches missed.">      return (map.remove(obj) != null);</span>
+    }
+
+    @Override
+    public Object[] toArray() {
+<span class="nc" id="L1189">      return map.data.keySet().toArray();</span>
+    }
+
+    @Override
+    public &lt;T&gt; T[] toArray(T[] array) {
+<span class="nc" id="L1194">      return map.data.keySet().toArray(array);</span>
+    }
+  }
+
+  /** An adapter to safely externalize the key iterator. */
+<span class="nc" id="L1199">  final class KeyIterator implements Iterator&lt;K&gt; {</span>
+<span class="nc" id="L1200">    final Iterator&lt;K&gt; iterator = data.keySet().iterator();</span>
+    K current;
+
+    @Override
+    public boolean hasNext() {
+<span class="nc" id="L1205">      return iterator.hasNext();</span>
+    }
+
+    @Override
+    public K next() {
+<span class="nc" id="L1210">      current = iterator.next();</span>
+<span class="nc" id="L1211">      return current;</span>
+    }
+
+    @Override
+    public void remove() {
+<span class="nc bnc" id="L1216" title="All 2 branches missed.">      checkState(current != null);</span>
+<span class="nc" id="L1217">      ConcurrentLinkedHashMap.this.remove(current);</span>
+<span class="nc" id="L1218">      current = null;</span>
+<span class="nc" id="L1219">    }</span>
+  }
+
+  /** An adapter to safely externalize the values. */
+<span class="nc" id="L1223">  final class Values extends AbstractCollection&lt;V&gt; {</span>
+
+    @Override
+    public int size() {
+<span class="nc" id="L1227">      return ConcurrentLinkedHashMap.this.size();</span>
+    }
+
+    @Override
+    public void clear() {
+<span class="nc" id="L1232">      ConcurrentLinkedHashMap.this.clear();</span>
+<span class="nc" id="L1233">    }</span>
+
+    @Override
+    public Iterator&lt;V&gt; iterator() {
+<span class="nc" id="L1237">      return new ValueIterator();</span>
+    }
+
+    @Override
+    public boolean contains(Object o) {
+<span class="nc" id="L1242">      return containsValue(o);</span>
+    }
+  }
+
+  /** An adapter to safely externalize the value iterator. */
+<span class="nc" id="L1247">  final class ValueIterator implements Iterator&lt;V&gt; {</span>
+<span class="nc" id="L1248">    final Iterator&lt;Node&lt;K, V&gt;&gt; iterator = data.values().iterator();</span>
+    Node&lt;K, V&gt; current;
+
+    @Override
+    public boolean hasNext() {
+<span class="nc" id="L1253">      return iterator.hasNext();</span>
+    }
+
+    @Override
+    public V next() {
+<span class="nc" id="L1258">      current = iterator.next();</span>
+<span class="nc" id="L1259">      return current.getValue();</span>
+    }
+
+    @Override
+    public void remove() {
+<span class="nc bnc" id="L1264" title="All 2 branches missed.">      checkState(current != null);</span>
+<span class="nc" id="L1265">      ConcurrentLinkedHashMap.this.remove(current.key);</span>
+<span class="nc" id="L1266">      current = null;</span>
+<span class="nc" id="L1267">    }</span>
+  }
+
+  /** An adapter to safely externalize the entries. */
+<span class="nc" id="L1271">  final class EntrySet extends AbstractSet&lt;Entry&lt;K, V&gt;&gt; {</span>
+<span class="nc" id="L1272">    final ConcurrentLinkedHashMap&lt;K, V&gt; map = ConcurrentLinkedHashMap.this;</span>
+
+    @Override
+    public int size() {
+<span class="nc" id="L1276">      return map.size();</span>
+    }
+
+    @Override
+    public void clear() {
+<span class="nc" id="L1281">      map.clear();</span>
+<span class="nc" id="L1282">    }</span>
+
+    @Override
+    public Iterator&lt;Entry&lt;K, V&gt;&gt; iterator() {
+<span class="nc" id="L1286">      return new EntryIterator();</span>
+    }
+
+    @Override
+    public boolean contains(Object obj) {
+<span class="nc bnc" id="L1291" title="All 2 branches missed.">      if (!(obj instanceof Entry&lt;?, ?&gt;)) {</span>
+<span class="nc" id="L1292">        return false;</span>
+      }
+<span class="nc" id="L1294">      Entry&lt;?, ?&gt; entry = (Entry&lt;?, ?&gt;) obj;</span>
+<span class="nc" id="L1295">      Node&lt;K, V&gt; node = map.data.get(entry.getKey());</span>
+<span class="nc bnc" id="L1296" title="All 4 branches missed.">      return (node != null) &amp;&amp; (node.getValue().equals(entry.getValue()));</span>
+    }
+
+    @Override
+    public boolean add(Entry&lt;K, V&gt; entry) {
+<span class="nc bnc" id="L1301" title="All 2 branches missed.">      return (map.putIfAbsent(entry.getKey(), entry.getValue()) == null);</span>
+    }
+
+    @Override
+    public boolean remove(Object obj) {
+<span class="nc bnc" id="L1306" title="All 2 branches missed.">      if (!(obj instanceof Entry&lt;?, ?&gt;)) {</span>
+<span class="nc" id="L1307">        return false;</span>
+      }
+<span class="nc" id="L1309">      Entry&lt;?, ?&gt; entry = (Entry&lt;?, ?&gt;) obj;</span>
+<span class="nc" id="L1310">      return map.remove(entry.getKey(), entry.getValue());</span>
+    }
+  }
+
+  /** An adapter to safely externalize the entry iterator. */
+<span class="nc" id="L1315">  final class EntryIterator implements Iterator&lt;Entry&lt;K, V&gt;&gt; {</span>
+<span class="nc" id="L1316">    final Iterator&lt;Node&lt;K, V&gt;&gt; iterator = data.values().iterator();</span>
+    Node&lt;K, V&gt; current;
+
+    @Override
+    public boolean hasNext() {
+<span class="nc" id="L1321">      return iterator.hasNext();</span>
+    }
+
+    @Override
+    public Entry&lt;K, V&gt; next() {
+<span class="nc" id="L1326">      current = iterator.next();</span>
+<span class="nc" id="L1327">      return new WriteThroughEntry(current);</span>
+    }
+
+    @Override
+    public void remove() {
+<span class="nc bnc" id="L1332" title="All 2 branches missed.">      checkState(current != null);</span>
+<span class="nc" id="L1333">      ConcurrentLinkedHashMap.this.remove(current.key);</span>
+<span class="nc" id="L1334">      current = null;</span>
+<span class="nc" id="L1335">    }</span>
+  }
+
+  /** An entry that allows updates to write through to the map. */
+  final class WriteThroughEntry extends SimpleEntry&lt;K, V&gt; {
+    static final long serialVersionUID = 1;
+
+<span class="nc" id="L1342">    WriteThroughEntry(Node&lt;K, V&gt; node) {</span>
+<span class="nc" id="L1343">      super(node.key, node.getValue());</span>
+<span class="nc" id="L1344">    }</span>
+
+    @Override
+    public V setValue(V value) {
+<span class="nc" id="L1348">      put(getKey(), value);</span>
+<span class="nc" id="L1349">      return super.setValue(value);</span>
+    }
+
+    Object writeReplace() {
+<span class="nc" id="L1353">      return new SimpleEntry&lt;&gt;(this);</span>
+    }
+  }
+
+  /** A weigher that enforces that the weight falls within a valid range. */
+  static final class BoundedEntryWeigher&lt;K, V&gt; implements EntryWeigher&lt;K, V&gt;, Serializable {
+    static final long serialVersionUID = 1;
+    final EntryWeigher&lt;? super K, ? super V&gt; weigher;
+
+<span class="nc" id="L1362">    BoundedEntryWeigher(EntryWeigher&lt;? super K, ? super V&gt; weigher) {</span>
+<span class="nc" id="L1363">      checkNotNull(weigher);</span>
+<span class="nc" id="L1364">      this.weigher = weigher;</span>
+<span class="nc" id="L1365">    }</span>
+
+    @Override
+    public int weightOf(K key, V value) {
+<span class="nc" id="L1369">      int weight = weigher.weightOf(key, value);</span>
+<span class="nc bnc" id="L1370" title="All 2 branches missed.">      checkArgument(weight &gt;= 1);</span>
+<span class="nc" id="L1371">      return weight;</span>
+    }
+
+    Object writeReplace() {
+<span class="nc" id="L1375">      return weigher;</span>
+    }
+  }
+
+  /** A queue that discards all additions and is always empty. */
+<span class="fc" id="L1380">  static final class DiscardingQueue extends AbstractQueue&lt;Object&gt; {</span>
+    @Override
+    public boolean add(Object e) {
+<span class="fc" id="L1383">      return true;</span>
+    }
+
+    @Override
+    public boolean offer(Object e) {
+<span class="nc" id="L1388">      return true;</span>
+    }
+
+    @Override
+    public Object poll() {
+<span class="fc" id="L1393">      return null;</span>
+    }
+
+    @Override
+    public Object peek() {
+<span class="nc" id="L1398">      return null;</span>
+    }
+
+    @Override
+    public int size() {
+<span class="nc" id="L1403">      return 0;</span>
+    }
+
+    @Override
+    public Iterator&lt;Object&gt; iterator() {
+<span class="nc" id="L1408">      return emptyList().iterator();</span>
+    }
+  }
+
+  /** A listener that ignores all notifications. */
+<span class="fc" id="L1413">  enum DiscardingListener implements EvictionListener&lt;Object, Object&gt; {</span>
+<span class="fc" id="L1414">    INSTANCE;</span>
+
+    @Override
+<span class="nc" id="L1417">    public void onEviction(Object key, Object value) {}</span>
+  }
+
+  /* ---------------- Serialization Support -------------- */
+
+  static final long serialVersionUID = 1;
+
+  Object writeReplace() {
+<span class="nc" id="L1425">    return new SerializationProxy&lt;&gt;(this);</span>
+  }
+
+  private void readObject(ObjectInputStream stream) throws InvalidObjectException {
+<span class="nc" id="L1429">    throw new InvalidObjectException(&quot;Proxy required&quot;);</span>
+  }
+
+  /**
+   * A proxy that is serialized instead of the map. The page-replacement algorithm's data structures
+   * are not serialized so the deserialized instance contains only the entries. This is acceptable
+   * as caches hold transient data that is recomputable and serialization would tend to be used as a
+   * fast warm-up process.
+   */
+  static final class SerializationProxy&lt;K, V&gt; implements Serializable {
+    final EntryWeigher&lt;? super K, ? super V&gt; weigher;
+    final EvictionListener&lt;K, V&gt; listener;
+    final int concurrencyLevel;
+    final Map&lt;K, V&gt; data;
+    final long capacity;
+
+<span class="nc" id="L1445">    SerializationProxy(ConcurrentLinkedHashMap&lt;K, V&gt; map) {</span>
+<span class="nc" id="L1446">      concurrencyLevel = map.concurrencyLevel;</span>
+<span class="nc" id="L1447">      data = new HashMap&lt;&gt;(map);</span>
+<span class="nc" id="L1448">      capacity = map.capacity.get();</span>
+<span class="nc" id="L1449">      listener = map.listener;</span>
+<span class="nc" id="L1450">      weigher = map.weigher;</span>
+<span class="nc" id="L1451">    }</span>
+
+    Object readResolve() {
+<span class="nc" id="L1454">      ConcurrentLinkedHashMap&lt;K, V&gt; map =</span>
+          new Builder&lt;K, V&gt;()
+<span class="nc" id="L1456">              .concurrencyLevel(concurrencyLevel)</span>
+<span class="nc" id="L1457">              .maximumWeightedCapacity(capacity)</span>
+<span class="nc" id="L1458">              .listener(listener)</span>
+<span class="nc" id="L1459">              .weigher(weigher)</span>
+<span class="nc" id="L1460">              .build();</span>
+<span class="nc" id="L1461">      map.putAll(data);</span>
+<span class="nc" id="L1462">      return map;</span>
+    }
+
+    static final long serialVersionUID = 1;
+  }
+
+  /* ---------------- Builder -------------- */
+
+  /**
+   * A builder that creates {@link ConcurrentLinkedHashMap} instances. It provides a flexible
+   * approach for constructing customized instances with a named parameter syntax. It can be used in
+   * the following manner:
+   *
+   * &lt;pre&gt;{@code
+   * ConcurrentMap&lt;Vertex, Set&lt;Edge&gt;&gt; graph = new Builder&lt;Vertex, Set&lt;Edge&gt;&gt;()
+   *     .maximumWeightedCapacity(5000)
+   *     .weigher(Weighers.&lt;Edge&gt;set())
+   *     .build();
+   * }&lt;/pre&gt;
+   */
+  public static final class Builder&lt;K, V&gt; {
+    static final int DEFAULT_CONCURRENCY_LEVEL = 16;
+    static final int DEFAULT_INITIAL_CAPACITY = 16;
+
+    EvictionListener&lt;K, V&gt; listener;
+    EntryWeigher&lt;? super K, ? super V&gt; weigher;
+
+    int concurrencyLevel;
+    int initialCapacity;
+    long capacity;
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L1494">    public Builder() {</span>
+<span class="fc" id="L1495">      capacity = -1;</span>
+<span class="fc" id="L1496">      weigher = Weighers.entrySingleton();</span>
+<span class="fc" id="L1497">      initialCapacity = DEFAULT_INITIAL_CAPACITY;</span>
+<span class="fc" id="L1498">      concurrencyLevel = DEFAULT_CONCURRENCY_LEVEL;</span>
+<span class="fc" id="L1499">      listener = (EvictionListener&lt;K, V&gt;) DiscardingListener.INSTANCE;</span>
+<span class="fc" id="L1500">    }</span>
+
+    /**
+     * Specifies the initial capacity of the hash table (default &lt;tt&gt;16&lt;/tt&gt;). This is the number of
+     * key-value pairs that the hash table can hold before a resize operation is required.
+     *
+     * @param initialCapacity the initial capacity used to size the hash table to accommodate this
+     *     many entries.
+     * @throws IllegalArgumentException if the initialCapacity is negative
+     */
+    public Builder&lt;K, V&gt; initialCapacity(int initialCapacity) {
+<span class="nc bnc" id="L1511" title="All 2 branches missed.">      checkArgument(initialCapacity &gt;= 0);</span>
+<span class="nc" id="L1512">      this.initialCapacity = initialCapacity;</span>
+<span class="nc" id="L1513">      return this;</span>
+    }
+
+    /**
+     * Specifies the maximum weighted capacity to coerce the map to and may exceed it temporarily.
+     *
+     * @param capacity the weighted threshold to bound the map by
+     * @throws IllegalArgumentException if the maximumWeightedCapacity is negative
+     */
+    public Builder&lt;K, V&gt; maximumWeightedCapacity(long capacity) {
+<span class="pc bpc" id="L1523" title="1 of 2 branches missed.">      checkArgument(capacity &gt;= 0);</span>
+<span class="fc" id="L1524">      this.capacity = capacity;</span>
+<span class="fc" id="L1525">      return this;</span>
+    }
+
+    /**
+     * Specifies the estimated number of concurrently updating threads. The implementation performs
+     * internal sizing to try to accommodate this many threads (default &lt;tt&gt;16&lt;/tt&gt;).
+     *
+     * @param concurrencyLevel the estimated number of concurrently updating threads
+     * @throws IllegalArgumentException if the concurrencyLevel is less than or equal to zero
+     */
+    public Builder&lt;K, V&gt; concurrencyLevel(int concurrencyLevel) {
+<span class="nc bnc" id="L1536" title="All 2 branches missed.">      checkArgument(concurrencyLevel &gt; 0);</span>
+<span class="nc" id="L1537">      this.concurrencyLevel = concurrencyLevel;</span>
+<span class="nc" id="L1538">      return this;</span>
+    }
+
+    /**
+     * Specifies an optional listener that is registered for notification when an entry is evicted.
+     *
+     * @param listener the object to forward evicted entries to
+     * @throws NullPointerException if the listener is null
+     */
+    public Builder&lt;K, V&gt; listener(EvictionListener&lt;K, V&gt; listener) {
+<span class="nc" id="L1548">      checkNotNull(listener);</span>
+<span class="nc" id="L1549">      this.listener = listener;</span>
+<span class="nc" id="L1550">      return this;</span>
+    }
+
+    /**
+     * Specifies an algorithm to determine how many the units of capacity a value consumes. The
+     * default algorithm bounds the map by the number of key-value pairs by giving each entry a
+     * weight of &lt;tt&gt;1&lt;/tt&gt;.
+     *
+     * @param weigher the algorithm to determine a value's weight
+     * @throws NullPointerException if the weigher is null
+     */
+    public Builder&lt;K, V&gt; weigher(Weigher&lt;? super V&gt; weigher) {
+<span class="nc" id="L1562">      this.weigher =</span>
+<span class="nc bnc" id="L1563" title="All 2 branches missed.">          (weigher == Weighers.singleton())</span>
+<span class="nc" id="L1564">              ? Weighers.&lt;K, V&gt;entrySingleton()</span>
+<span class="nc" id="L1565">              : new BoundedEntryWeigher&lt;&gt;(Weighers.asEntryWeigher(weigher));</span>
+<span class="nc" id="L1566">      return this;</span>
+    }
+
+    /**
+     * Specifies an algorithm to determine how many the units of capacity an entry consumes. The
+     * default algorithm bounds the map by the number of key-value pairs by giving each entry a
+     * weight of &lt;tt&gt;1&lt;/tt&gt;.
+     *
+     * @param weigher the algorithm to determine a entry's weight
+     * @throws NullPointerException if the weigher is null
+     */
+    public Builder&lt;K, V&gt; weigher(EntryWeigher&lt;? super K, ? super V&gt; weigher) {
+<span class="nc" id="L1578">      this.weigher =</span>
+<span class="nc bnc" id="L1579" title="All 2 branches missed.">          (weigher == Weighers.entrySingleton())</span>
+<span class="nc" id="L1580">              ? Weighers.&lt;K, V&gt;entrySingleton()</span>
+<span class="nc" id="L1581">              : new BoundedEntryWeigher&lt;&gt;(weigher);</span>
+<span class="nc" id="L1582">      return this;</span>
+    }
+
+    /**
+     * Creates a new {@link ConcurrentLinkedHashMap} instance.
+     *
+     * @throws IllegalStateException if the maximum weighted capacity was not set
+     */
+    public ConcurrentLinkedHashMap&lt;K, V&gt; build() {
+<span class="pc bpc" id="L1591" title="1 of 2 branches missed.">      checkState(capacity &gt;= 0);</span>
+<span class="fc" id="L1592">      return new ConcurrentLinkedHashMap&lt;&gt;(this);</span>
+    }
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

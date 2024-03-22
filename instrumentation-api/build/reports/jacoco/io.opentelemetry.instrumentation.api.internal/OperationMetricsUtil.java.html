@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OperationMetricsUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.internal</a> &gt; <span class="el_source">OperationMetricsUtil.java</span></div><h1>OperationMetricsUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.internal;
+
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.metrics.DoubleHistogramBuilder;
+import io.opentelemetry.api.metrics.Meter;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.extension.incubator.metrics.ExtendedDoubleHistogramBuilder;
+import io.opentelemetry.instrumentation.api.instrumenter.OperationListener;
+import io.opentelemetry.instrumentation.api.instrumenter.OperationMetrics;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * This class is internal and is hence not for public use. Its APIs are unstable and can change at
+ * any time.
+ */
+public class OperationMetricsUtil {
+<span class="fc" id="L25">  private static final Logger logger = Logger.getLogger(OperationMetricsUtil.class.getName());</span>
+<span class="fc" id="L26">  private static final OperationListener NOOP_OPERATION_LISTENER =</span>
+<span class="fc" id="L27">      new OperationListener() {</span>
+
+        @Override
+        public Context onStart(Context context, Attributes startAttributes, long startNanos) {
+<span class="nc" id="L31">          return context;</span>
+        }
+
+        @Override
+<span class="nc" id="L35">        public void onEnd(Context context, Attributes endAttributes, long endNanos) {}</span>
+      };
+
+  public static OperationMetrics create(
+      String description, Function&lt;Meter, OperationListener&gt; factory) {
+<span class="fc" id="L40">    return create(</span>
+        description,
+        factory,
+        (s, histogramBuilder) -&gt;
+<span class="nc" id="L44">            logger.log(</span>
+                Level.WARNING,
+                &quot;Disabling {0} metrics because {1} does not implement {2}. This prevents using &quot;
+                    + &quot;metrics advice, which could result in {0} metrics having high cardinality &quot;
+                    + &quot;attributes.&quot;,
+                new Object[] {
+                  description,
+<span class="nc" id="L51">                  histogramBuilder.getClass().getName(),</span>
+<span class="nc" id="L52">                  ExtendedDoubleHistogramBuilder.class.getName()</span>
+                }));
+  }
+
+  // visible for testing
+  static OperationMetrics create(
+      String description,
+      Function&lt;Meter, OperationListener&gt; factory,
+      BiConsumer&lt;String, DoubleHistogramBuilder&gt; warningEmitter) {
+<span class="fc" id="L61">    return meter -&gt; {</span>
+<span class="fc" id="L62">      DoubleHistogramBuilder histogramBuilder = meter.histogramBuilder(&quot;compatibility-test&quot;);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">      if (!(histogramBuilder instanceof ExtendedDoubleHistogramBuilder)</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">          &amp;&amp; !histogramBuilder.getClass().getName().contains(&quot;NoopDoubleHistogram&quot;)) {</span>
+<span class="fc" id="L65">        warningEmitter.accept(description, histogramBuilder);</span>
+<span class="fc" id="L66">        return NOOP_OPERATION_LISTENER;</span>
+      }
+<span class="fc" id="L68">      return factory.apply(meter);</span>
+    };
+  }
+
+  private OperationMetricsUtil() {}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

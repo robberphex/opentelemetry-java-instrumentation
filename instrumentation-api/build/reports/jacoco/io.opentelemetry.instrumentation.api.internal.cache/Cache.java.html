@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Cache.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.internal.cache</a> &gt; <span class="el_source">Cache.java</span></div><h1>Cache.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.internal.cache;
+
+import io.opentelemetry.instrumentation.api.internal.cache.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import java.util.function.Function;
+import javax.annotation.Nullable;
+
+/**
+ * A cache from keys to values.
+ *
+ * &lt;p&gt;This class is internal and is hence not for public use. Its APIs are unstable and can change
+ * at any time.
+ */
+public interface Cache&lt;K, V&gt; {
+
+  /**
+   * Returns new unbounded cache
+   *
+   * &lt;p&gt;Keys are referenced weakly and compared using identity comparison, not {@link
+   * Object#equals(Object)}.
+   */
+  static &lt;K, V&gt; Cache&lt;K, V&gt; weak() {
+<span class="fc" id="L27">    return new WeakLockFreeCache&lt;&gt;();</span>
+  }
+
+  /**
+   * Returns new bounded cache.
+   *
+   * &lt;p&gt;Both keys and values are strongly referenced.
+   */
+  static &lt;K, V&gt; Cache&lt;K, V&gt; bounded(int capacity) {
+<span class="fc" id="L36">    ConcurrentLinkedHashMap&lt;K, V&gt; map =</span>
+<span class="fc" id="L37">        new ConcurrentLinkedHashMap.Builder&lt;K, V&gt;().maximumWeightedCapacity(capacity).build();</span>
+<span class="fc" id="L38">    return new MapBackedCache&lt;&gt;(map);</span>
+  }
+
+  /**
+   * Returns the cached value associated with the provided {@code key}. If no value is cached yet,
+   * computes the value using {@code mappingFunction}, stores the result, and returns it.
+   */
+  V computeIfAbsent(K key, Function&lt;? super K, ? extends V&gt; mappingFunction);
+
+  /**
+   * Returns the cached value associated with the provided {@code key} if present, or {@code null}
+   * otherwise.
+   */
+  @Nullable
+  V get(K key);
+
+  /** Puts the {@code value} into the cache for the {@code key}. */
+  void put(K key, V value);
+
+  /** Removes a value for {@code key} if present. */
+  void remove(K key);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

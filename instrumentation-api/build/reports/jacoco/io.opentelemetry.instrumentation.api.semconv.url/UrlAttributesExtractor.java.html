@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UrlAttributesExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.url</a> &gt; <span class="el_source">UrlAttributesExtractor.java</span></div><h1>UrlAttributesExtractor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.url;
+
+import io.opentelemetry.api.common.AttributesBuilder;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.instrumentation.api.instrumenter.AttributesExtractor;
+import io.opentelemetry.instrumentation.api.instrumenter.InstrumenterBuilder;
+import io.opentelemetry.instrumentation.api.semconv.url.internal.InternalUrlAttributesExtractor;
+import javax.annotation.Nullable;
+
+/**
+ * Extractor of &lt;a
+ * href=&quot;https://github.com/open-telemetry/semantic-conventions/blob/v1.23.0/docs/url/url.md&quot;&gt;URL
+ * attributes&lt;/a&gt;.
+ *
+ * @since 2.0.0
+ */
+public final class UrlAttributesExtractor&lt;REQUEST, RESPONSE&gt;
+    implements AttributesExtractor&lt;REQUEST, RESPONSE&gt; {
+
+  /**
+   * Creates the URL attributes extractor.
+   *
+   * @see InstrumenterBuilder#addAttributesExtractor(AttributesExtractor)
+   */
+  public static &lt;REQUEST, RESPONSE&gt; UrlAttributesExtractor&lt;REQUEST, RESPONSE&gt; create(
+      UrlAttributesGetter&lt;REQUEST&gt; getter) {
+<span class="fc" id="L32">    return new UrlAttributesExtractor&lt;&gt;(getter);</span>
+  }
+
+  private final InternalUrlAttributesExtractor&lt;REQUEST&gt; internalExtractor;
+
+<span class="fc" id="L37">  UrlAttributesExtractor(UrlAttributesGetter&lt;REQUEST&gt; getter) {</span>
+    // the UrlAttributesExtractor will always emit new semconv
+<span class="fc" id="L39">    internalExtractor =</span>
+        new InternalUrlAttributesExtractor&lt;&gt;(
+<span class="fc" id="L41">            getter, /* alternateSchemeProvider= */ request -&gt; null);</span>
+<span class="fc" id="L42">  }</span>
+
+  @Override
+  public void onStart(AttributesBuilder attributes, Context parentContext, REQUEST request) {
+<span class="fc" id="L46">    internalExtractor.onStart(attributes, request);</span>
+<span class="fc" id="L47">  }</span>
+
+  @Override
+  public void onEnd(
+      AttributesBuilder attributes,
+      Context context,
+      REQUEST request,
+      @Nullable RESPONSE response,
+<span class="fc" id="L55">      @Nullable Throwable error) {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

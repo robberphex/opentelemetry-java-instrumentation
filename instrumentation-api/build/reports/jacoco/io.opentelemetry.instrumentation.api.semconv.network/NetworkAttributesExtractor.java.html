@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetworkAttributesExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.network</a> &gt; <span class="el_source">NetworkAttributesExtractor.java</span></div><h1>NetworkAttributesExtractor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.network;
+
+import io.opentelemetry.api.common.AttributesBuilder;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.instrumentation.api.instrumenter.AttributesExtractor;
+import io.opentelemetry.instrumentation.api.instrumenter.InstrumenterBuilder;
+import io.opentelemetry.instrumentation.api.semconv.network.internal.InternalNetworkAttributesExtractor;
+import javax.annotation.Nullable;
+
+/**
+ * Extractor of &lt;a
+ * href=&quot;https://github.com/open-telemetry/semantic-conventions/blob/v1.23.0/docs/general/attributes.md#other-network-attributes&quot;&gt;network
+ * attributes&lt;/a&gt;.
+ *
+ * @since 2.0.0
+ */
+public final class NetworkAttributesExtractor&lt;REQUEST, RESPONSE&gt;
+    implements AttributesExtractor&lt;REQUEST, RESPONSE&gt; {
+
+  /**
+   * Creates the network attributes extractor.
+   *
+   * @see InstrumenterBuilder#addAttributesExtractor(AttributesExtractor)
+   */
+  public static &lt;REQUEST, RESPONSE&gt; NetworkAttributesExtractor&lt;REQUEST, RESPONSE&gt; create(
+      NetworkAttributesGetter&lt;REQUEST, RESPONSE&gt; getter) {
+<span class="fc" id="L32">    return new NetworkAttributesExtractor&lt;&gt;(getter);</span>
+  }
+
+  private final InternalNetworkAttributesExtractor&lt;REQUEST, RESPONSE&gt; internalExtractor;
+
+<span class="fc" id="L37">  NetworkAttributesExtractor(NetworkAttributesGetter&lt;REQUEST, RESPONSE&gt; getter) {</span>
+<span class="fc" id="L38">    internalExtractor =</span>
+        new InternalNetworkAttributesExtractor&lt;&gt;(
+            getter,
+            /* captureProtocolAttributes= */ true,
+            /* captureLocalSocketAttributes= */ true);
+<span class="fc" id="L43">  }</span>
+
+  @Override
+<span class="fc" id="L46">  public void onStart(AttributesBuilder attributes, Context parentContext, REQUEST request) {}</span>
+
+  @Override
+  public void onEnd(
+      AttributesBuilder attributes,
+      Context context,
+      REQUEST request,
+      @Nullable RESPONSE response,
+      @Nullable Throwable error) {
+<span class="fc" id="L55">    internalExtractor.onEnd(attributes, request, response);</span>
+<span class="fc" id="L56">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

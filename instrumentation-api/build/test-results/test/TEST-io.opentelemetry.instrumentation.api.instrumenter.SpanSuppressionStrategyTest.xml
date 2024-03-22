@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" tests="31" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:18" hostname="luyanbo-MBP.local" time="0.08">
+  <properties/>
+  <testcase name="semconv_shouldSuppressContextWhenAllSpanKeysArePresent()" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="context_shouldSuppressWhenKeyIsAvailableAndTrue()" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.003"/>
+  <testcase name="semconv_shouldNotSuppressContextWithPartiallyDifferentSpanKeys()" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[1] none, NONE" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.007"/>
+  <testcase name="[2] NONE, NONE" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[3] span-kind, SPAN_KIND" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[4] Span-Kind, SPAN_KIND" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[5] semconv, SEMCONV" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[6] SemConv, SEMCONV" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.0"/>
+  <testcase name="[7] asdfasdfasdf, SEMCONV" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[8] null, SEMCONV" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="semconv_shouldStoreProvidedSpanKeysInContext()" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[1] SERVER, opentelemetry-traces-span-key-kind-server" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[2] CLIENT, opentelemetry-traces-span-key-kind-client" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[3] CONSUMER, opentelemetry-traces-span-key-kind-consumer" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[4] PRODUCER, opentelemetry-traces-span-key-kind-producer" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="context_shouldNotSuppressWhenKeyIsNotAvailable()" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.0"/>
+  <testcase name="semconv_shouldNotSuppressAnythingWhenThereAreNoSpanKeys()" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[1] SERVER, opentelemetry-traces-span-key-kind-server" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[2] CLIENT, opentelemetry-traces-span-key-kind-client" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[3] CONSUMER, opentelemetry-traces-span-key-kind-consumer" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[4] PRODUCER, opentelemetry-traces-span-key-kind-producer" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[1] SERVER, opentelemetry-traces-span-key-kind-server" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[2] CLIENT, opentelemetry-traces-span-key-kind-client" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[3] CONSUMER, opentelemetry-traces-span-key-kind-consumer" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[4] PRODUCER, opentelemetry-traces-span-key-kind-producer" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.0"/>
+  <testcase name="[1] INTERNAL" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[2] SERVER" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[3] CLIENT" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[4] PRODUCER" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <testcase name="[5] CONSUMER" classname="io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressionStrategyTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

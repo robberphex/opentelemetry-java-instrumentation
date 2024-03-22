@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VirtualField.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.util</a> &gt; <span class="el_source">VirtualField.java</span></div><h1>VirtualField.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.util;
+
+import io.opentelemetry.instrumentation.api.internal.RuntimeVirtualFieldSupplier;
+import javax.annotation.Nullable;
+
+/**
+ * Represents a &quot;virtual&quot; field of type {@code F} that is added to type {@code T} in the runtime.
+ *
+ * &lt;p&gt;A virtual field has similar semantics to a weak-keys strong-values map: the value will be
+ * garbage collected when their owner instance is collected. It is discouraged to use a virtual
+ * field for keeping values that might reference their key, as it may cause memory leaks.
+ *
+ * @param &lt;T&gt; The type that will contain the new virtual field.
+ * @param &lt;F&gt; The field type that'll be added to {@code T}.
+ */
+// we're using an abstract class here so that we can call static find() in pre-jdk8 advice classes
+<span class="nc" id="L22">public abstract class VirtualField&lt;T, F&gt; {</span>
+
+  /**
+   * Finds a {@link VirtualField} instance for given {@code type} and {@code fieldType}.
+   *
+   * &lt;p&gt;Conceptually this can be thought of as a map lookup to fetch a second level map given {@code
+   * type}.
+   *
+   * &lt;p&gt;In runtime, when using the javaagent, the &lt;em&gt;calls&lt;/em&gt; to this method are rewritten to
+   * something more performant while injecting advice into a method.
+   *
+   * &lt;p&gt;When using this method outside of Advice method, the {@link VirtualField} should be looked
+   * up once and stored in a field to avoid repeatedly calling this method.
+   *
+   * @param type The type that will contain the new virtual field.
+   * @param fieldType The field type that will be added to {@code type}.
+   */
+  public static &lt;U extends T, V extends F, T, F&gt; VirtualField&lt;U, V&gt; find(
+      Class&lt;T&gt; type, Class&lt;F&gt; fieldType) {
+<span class="nc" id="L41">    return RuntimeVirtualFieldSupplier.get().find(type, fieldType);</span>
+  }
+
+  /** Gets the value of this virtual field. */
+  @Nullable
+  public abstract F get(T object);
+
+  /** Sets the new value of this virtual field. */
+  public abstract void set(T object, @Nullable F fieldValue);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

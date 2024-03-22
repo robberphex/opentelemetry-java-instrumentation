@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpanSuppressionStrategy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.instrumenter</a> &gt; <span class="el_source">SpanSuppressionStrategy.java</span></div><h1>SpanSuppressionStrategy.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.instrumenter;
+
+import static java.util.Collections.singleton;
+
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressors.BySpanKey;
+import io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressors.DelegateBySpanKind;
+import io.opentelemetry.instrumentation.api.instrumenter.SpanSuppressors.Noop;
+import io.opentelemetry.instrumentation.api.internal.SpanKey;
+import io.opentelemetry.instrumentation.api.internal.SpanKeyProvider;
+import java.util.EnumMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import javax.annotation.Nullable;
+
+<span class="fc" id="L22">enum SpanSuppressionStrategy {</span>
+  /** Do not suppress spans at all. */
+<span class="fc" id="L24">  NONE {</span>
+    @Override
+    SpanSuppressor create(Set&lt;SpanKey&gt; spanKeys) {
+<span class="fc" id="L27">      return Noop.INSTANCE;</span>
+    }
+  },
+  /**
+   * Suppress spans by {@link SpanKind}. This is equivalent to the &quot;legacy&quot; suppression strategy
+   * used in the agent.
+   *
+   * &lt;p&gt;Child spans of the same kind will be suppressed; e.g. if there already is a {@link
+   * SpanKind#CLIENT CLIENT} span in the context, a second {@code CLIENT} span won't be started.
+   */
+<span class="fc" id="L37">  SPAN_KIND {</span>
+    @SuppressWarnings(&quot;ImmutableEnumChecker&quot;) // this field actually is immutable
+    private final SpanSuppressor strategy;
+
+    {
+<span class="fc" id="L42">      Map&lt;SpanKind, SpanSuppressor&gt; delegates = new EnumMap&lt;&gt;(SpanKind.class);</span>
+<span class="fc" id="L43">      delegates.put(SpanKind.SERVER, new BySpanKey(singleton(SpanKey.KIND_SERVER)));</span>
+<span class="fc" id="L44">      delegates.put(SpanKind.CLIENT, new BySpanKey(singleton(SpanKey.KIND_CLIENT)));</span>
+<span class="fc" id="L45">      delegates.put(SpanKind.CONSUMER, new BySpanKey(singleton(SpanKey.KIND_CONSUMER)));</span>
+<span class="fc" id="L46">      delegates.put(SpanKind.PRODUCER, new BySpanKey(singleton(SpanKey.KIND_PRODUCER)));</span>
+<span class="fc" id="L47">      strategy = new DelegateBySpanKind(delegates);</span>
+<span class="fc" id="L48">    }</span>
+
+    @Override
+    SpanSuppressor create(Set&lt;SpanKey&gt; spanKeys) {
+<span class="fc" id="L52">      return strategy;</span>
+    }
+  },
+  /**
+   * Suppress spans by the semantic convention they're supposed to represent. This strategy uses
+   * {@linkplain SpanKey span keys} returned by the {@link SpanKeyProvider#internalGetSpanKey()}
+   * method to determine if the span can be created or not. An {@link AttributesExtractor} can
+   * implement that method to associate itself (and the {@link Instrumenter} it is a part of) with a
+   * particular convention.
+   *
+   * &lt;p&gt;For example, nested HTTP client spans will be suppressed; but an RPC client span will not
+   * suppress an HTTP client span, if the instrumented RPC client uses HTTP as transport.
+   */
+<span class="fc" id="L65">  SEMCONV {</span>
+    @Override
+    SpanSuppressor create(Set&lt;SpanKey&gt; spanKeys) {
+<span class="fc bfc" id="L68" title="All 2 branches covered.">      if (spanKeys.isEmpty()) {</span>
+<span class="fc" id="L69">        return Noop.INSTANCE;</span>
+      }
+<span class="fc" id="L71">      return new BySpanKey(spanKeys);</span>
+    }
+  };
+
+  abstract SpanSuppressor create(Set&lt;SpanKey&gt; spanKeys);
+
+  static SpanSuppressionStrategy fromConfig(@Nullable String value) {
+<span class="fc bfc" id="L78" title="All 2 branches covered.">    if (value == null) {</span>
+<span class="fc" id="L79">      value = &quot;semconv&quot;;</span>
+    }
+<span class="fc bfc" id="L81" title="All 3 branches covered.">    switch (value.toLowerCase(Locale.ROOT)) {</span>
+      case &quot;none&quot;:
+<span class="fc" id="L83">        return NONE;</span>
+      case &quot;span-kind&quot;:
+<span class="fc" id="L85">        return SPAN_KIND;</span>
+      default:
+<span class="fc" id="L87">        return SEMCONV;</span>
+    }
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

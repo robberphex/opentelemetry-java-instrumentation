@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpServerRouteSource.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.http</a> &gt; <span class="el_source">HttpServerRouteSource.java</span></div><h1>HttpServerRouteSource.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.http;
+
+/**
+ * Represents the source that provided the {@code http.route} attribute.
+ *
+ * @since 2.0.0
+ */
+<span class="fc" id="L13">public enum HttpServerRouteSource {</span>
+  /**
+   * Represents a &quot;filter&quot; that may execute before the actual server handler. E.g. the Servlet API
+   * {@code Filter} interface. Since multiple filters may match the same request, the one with the
+   * longest (most detailed) route will be chosen.
+   */
+<span class="fc" id="L19">  SERVER_FILTER(1, /* useFirst= */ false),</span>
+  /** Represents the actual server handler. E.g. the Servlet API {@code Servlet} interface. */
+<span class="fc" id="L21">  SERVER(2),</span>
+  /**
+   * Represents the controller, usually defined as part of some MVC framework. E.g. a Spring Web MVC
+   * controller method, or a JAX-RS annotated resource method.
+   */
+<span class="fc" id="L26">  CONTROLLER(3),</span>
+  /**
+   * Represents a nested controller, usually defined as part of some MVC framework. E.g. a JAX-RS
+   * annotated sub-resource method. Since multiple nested controllers may match the same request,
+   * the one with the longest (most detailed) route will be chosen.
+   */
+<span class="fc" id="L32">  NESTED_CONTROLLER(4, /* useFirst= */ false);</span>
+
+  final int order;
+  final boolean useFirst;
+
+  HttpServerRouteSource(int order) {
+<span class="fc" id="L38">    this(order, /* useFirst= */ true);</span>
+<span class="fc" id="L39">  }</span>
+
+<span class="fc" id="L41">  HttpServerRouteSource(int order, boolean useFirst) {</span>
+<span class="fc" id="L42">    this.order = order;</span>
+<span class="fc" id="L43">    this.useFirst = useFirst;</span>
+<span class="fc" id="L44">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

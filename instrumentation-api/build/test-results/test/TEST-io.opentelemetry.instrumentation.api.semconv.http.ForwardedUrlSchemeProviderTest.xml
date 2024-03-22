@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" tests="19" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:19" hostname="luyanbo-MBP.local" time="0.303">
+  <properties/>
+  <testcase name="[1] [for=1.1.1.1;proto=xyz], xyz" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.228"/>
+  <testcase name="[2] [for=1.1.1.1;proto=xyz;], xyz" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.002"/>
+  <testcase name="[3] [for=1.1.1.1;proto=xyz,], xyz" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.003"/>
+  <testcase name="[4] [for=1.1.1.1;proto=], null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.003"/>
+  <testcase name="[5] [for=1.1.1.1;proto=;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.003"/>
+  <testcase name="[6] [for=1.1.1.1;proto=,], null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.003"/>
+  <testcase name="[7] [for=1.1.1.1;proto=&quot;xyz&quot;], xyz" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.002"/>
+  <testcase name="[8] [for=1.1.1.1;proto=&quot;xyz&quot;;], xyz" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.001"/>
+  <testcase name="[9] [for=1.1.1.1;proto=&quot;xyz&quot;,], xyz" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.002"/>
+  <testcase name="[10] [for=1.1.1.1;proto=&quot;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.002"/>
+  <testcase name="[11] [for=1.1.1.1;proto=&quot;&quot;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.003"/>
+  <testcase name="[12] [for=1.1.1.1;proto=&quot;&quot;;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.003"/>
+  <testcase name="[13] [for=1.1.1.1;proto=&quot;&quot;,], null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.002"/>
+  <testcase name="[14] [for=1.1.1.1, proto=xyz, proto=abc], xyz" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.003"/>
+  <testcase name="[1] [xyz], xyz" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.004"/>
+  <testcase name="[2] [&quot;xyz&quot;], xyz" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.003"/>
+  <testcase name="[3] [&quot;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.003"/>
+  <testcase name="[4] [xyz, abc], xyz" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.003"/>
+  <testcase name="noHeaders()" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedUrlSchemeProviderTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

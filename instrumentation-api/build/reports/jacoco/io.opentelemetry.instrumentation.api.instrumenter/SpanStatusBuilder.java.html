@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpanStatusBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.instrumenter</a> &gt; <span class="el_source">SpanStatusBuilder.java</span></div><h1>SpanStatusBuilder.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.instrumenter;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+
+/** A builder that exposes methods for setting the status of a span. */
+public interface SpanStatusBuilder {
+
+  /**
+   * Sets the status to the {@code Span}.
+   *
+   * &lt;p&gt;If used, this will override the default {@code Span} status. Default status code is {@link
+   * StatusCode#UNSET}.
+   *
+   * &lt;p&gt;Only the value of the last call will be recorded, and implementations are free to ignore
+   * previous calls.
+   *
+   * @param statusCode the {@link StatusCode} to set.
+   * @return this.
+   * @see Span#setStatus(StatusCode)
+   */
+  @CanIgnoreReturnValue
+  default SpanStatusBuilder setStatus(StatusCode statusCode) {
+<span class="fc" id="L30">    return setStatus(statusCode, &quot;&quot;);</span>
+  }
+
+  /**
+   * Sets the status to the {@code Span}.
+   *
+   * &lt;p&gt;If used, this will override the default {@code Span} status. Default status code is {@link
+   * StatusCode#UNSET}.
+   *
+   * &lt;p&gt;Only the value of the last call will be recorded, and implementations are free to ignore
+   * previous calls.
+   *
+   * @param statusCode the {@link StatusCode} to set.
+   * @param description the description of the {@code Status}.
+   * @return this.
+   * @see Span#setStatus(StatusCode, String)
+   */
+  @CanIgnoreReturnValue
+  SpanStatusBuilder setStatus(StatusCode statusCode, String description);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

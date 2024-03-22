@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetworkAttributesGetter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.network</a> &gt; <span class="el_source">NetworkAttributesGetter.java</span></div><h1>NetworkAttributesGetter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.network;
+
+import io.opentelemetry.instrumentation.api.semconv.network.internal.InetSocketAddressUtil;
+import java.net.InetSocketAddress;
+import javax.annotation.Nullable;
+
+/**
+ * An interface for getting network attributes.
+ *
+ * &lt;p&gt;Instrumentation authors will create implementations of this interface for their specific
+ * library/framework. It will be used by the {@link NetworkAttributesExtractor} (or other convention
+ * specific extractors) to obtain the various network attributes in a type-generic way.
+ *
+ * @since 2.0.0
+ */
+public interface NetworkAttributesGetter&lt;REQUEST, RESPONSE&gt; {
+
+  /**
+   * Returns the &lt;a href=&quot;https://osi-model.com/network-layer/&quot;&gt;OSI network layer&lt;/a&gt; or non-OSI
+   * equivalent.
+   *
+   * &lt;p&gt;Examples: {@code ipv4}, {@code ipv6}
+   */
+  @Nullable
+  default String getNetworkType(REQUEST request, @Nullable RESPONSE response) {
+<span class="fc" id="L31">    return InetSocketAddressUtil.getNetworkType(</span>
+<span class="fc" id="L32">        getNetworkLocalInetSocketAddress(request, response),</span>
+<span class="fc" id="L33">        getNetworkPeerInetSocketAddress(request, response));</span>
+  }
+
+  /**
+   * Returns the &lt;a href=&quot;https://osi-model.com/transport-layer/&quot;&gt;OSI transport layer&lt;/a&gt; or &lt;a
+   * href=&quot;https://en.wikipedia.org/wiki/Inter-process_communication&quot;&gt;inter-process communication
+   * method&lt;/a&gt;.
+   *
+   * &lt;p&gt;Examples: {@code tcp}, {@code udp}
+   */
+  @Nullable
+  default String getNetworkTransport(REQUEST request, @Nullable RESPONSE response) {
+<span class="fc" id="L45">    return null;</span>
+  }
+
+  /**
+   * Returns the &lt;a href=&quot;https://osi-model.com/application-layer/&quot;&gt;OSI application layer&lt;/a&gt; or
+   * non-OSI equivalent.
+   *
+   * &lt;p&gt;Examples: {@code ampq}, {@code http}, {@code mqtt}
+   */
+  @Nullable
+  default String getNetworkProtocolName(REQUEST request, @Nullable RESPONSE response) {
+<span class="fc" id="L56">    return null;</span>
+  }
+
+  /**
+   * Returns the version of the protocol returned by {@link #getNetworkProtocolName(Object,
+   * Object)}.
+   *
+   * &lt;p&gt;Examples: {@code 3.1.1}
+   */
+  @Nullable
+  default String getNetworkProtocolVersion(REQUEST request, @Nullable RESPONSE response) {
+<span class="fc" id="L67">    return null;</span>
+  }
+
+  /**
+   * Returns an {@link InetSocketAddress} object representing the local socket address.
+   *
+   * &lt;p&gt;Implementing this method is equivalent to implementing both {@link
+   * #getNetworkLocalAddress(Object, Object)} and {@link #getNetworkLocalPort(Object, Object)}.
+   */
+  @Nullable
+  default InetSocketAddress getNetworkLocalInetSocketAddress(
+      REQUEST request, @Nullable RESPONSE response) {
+<span class="nc" id="L79">    return null;</span>
+  }
+
+  /**
+   * Returns the local address of the network connection - IP address or Unix domain socket name.
+   *
+   * &lt;p&gt;Examples: {@code 10.1.2.80}, {@code /tmp/my.sock}
+   *
+   * &lt;p&gt;By default, this method attempts to retrieve the local address using the {@link
+   * #getNetworkLocalInetSocketAddress(Object, Object)} method. If that method is not implemented,
+   * it will simply return {@code null}. If the instrumented library does not expose {@link
+   * InetSocketAddress} in its API, you might want to implement this method instead of {@link
+   * #getNetworkLocalInetSocketAddress(Object, Object)}.
+   */
+  @Nullable
+  default String getNetworkLocalAddress(REQUEST request, @Nullable RESPONSE response) {
+<span class="fc" id="L95">    return InetSocketAddressUtil.getIpAddress(getNetworkLocalInetSocketAddress(request, response));</span>
+  }
+
+  /**
+   * Returns the local port number of the network connection.
+   *
+   * &lt;p&gt;Examples: {@code 65123}
+   *
+   * &lt;p&gt;By default, this method attempts to retrieve the local port using the {@link
+   * #getNetworkLocalInetSocketAddress(Object, Object)} method. If that method is not implemented,
+   * it will simply return {@code null}. If the instrumented library does not expose {@link
+   * InetSocketAddress} in its API, you might want to implement this method instead of {@link
+   * #getNetworkLocalInetSocketAddress(Object, Object)}.
+   */
+  @Nullable
+  default Integer getNetworkLocalPort(REQUEST request, @Nullable RESPONSE response) {
+<span class="fc" id="L111">    return InetSocketAddressUtil.getPort(getNetworkLocalInetSocketAddress(request, response));</span>
+  }
+
+  /**
+   * Returns an {@link InetSocketAddress} object representing the peer socket address.
+   *
+   * &lt;p&gt;Implementing this method is equivalent to implementing both {@link
+   * #getNetworkPeerAddress(Object, Object)} and {@link #getNetworkPeerPort(Object, Object)}.
+   */
+  @Nullable
+  default InetSocketAddress getNetworkPeerInetSocketAddress(
+      REQUEST request, @Nullable RESPONSE response) {
+<span class="nc" id="L123">    return null;</span>
+  }
+
+  /**
+   * Returns the peer address of the network connection - IP address or Unix domain socket name.
+   *
+   * &lt;p&gt;Examples: {@code 10.1.2.80}, {@code /tmp/my.sock}
+   *
+   * &lt;p&gt;By default, this method attempts to retrieve the peer address using the {@link
+   * #getNetworkPeerInetSocketAddress(Object, Object)} method. If that method is not implemented, it
+   * will simply return {@code null}. If the instrumented library does not expose {@link
+   * InetSocketAddress} in its API, you might want to implement this method instead of {@link
+   * #getNetworkPeerInetSocketAddress(Object, Object)}.
+   */
+  @Nullable
+  default String getNetworkPeerAddress(REQUEST request, @Nullable RESPONSE response) {
+<span class="fc" id="L139">    return InetSocketAddressUtil.getIpAddress(getNetworkPeerInetSocketAddress(request, response));</span>
+  }
+
+  /**
+   * Returns the peer port number of the network connection.
+   *
+   * &lt;p&gt;Examples: {@code 65123}
+   *
+   * &lt;p&gt;By default, this method attempts to retrieve the peer port using the {@link
+   * #getNetworkPeerInetSocketAddress(Object, Object)} method. If that method is not implemented, it
+   * will simply return {@code null}. If the instrumented library does not expose {@link
+   * InetSocketAddress} in its API, you might want to implement this method instead of {@link
+   * #getNetworkPeerInetSocketAddress(Object, Object)}.
+   */
+  @Nullable
+  default Integer getNetworkPeerPort(REQUEST request, @Nullable RESPONSE response) {
+<span class="fc" id="L155">    return InetSocketAddressUtil.getPort(getNetworkPeerInetSocketAddress(request, response));</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

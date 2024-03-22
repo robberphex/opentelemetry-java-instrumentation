@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RuntimeVirtualFieldSupplier.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.internal</a> &gt; <span class="el_source">RuntimeVirtualFieldSupplier.java</span></div><h1>RuntimeVirtualFieldSupplier.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.internal;
+
+import io.opentelemetry.instrumentation.api.internal.cache.Cache;
+import io.opentelemetry.instrumentation.api.util.VirtualField;
+import java.util.logging.Logger;
+import javax.annotation.Nullable;
+
+/**
+ * This class is internal and is hence not for public use. Its APIs are unstable and can change at
+ * any time.
+ */
+public final class RuntimeVirtualFieldSupplier {
+
+<span class="nc" id="L19">  private static final Logger logger =</span>
+<span class="nc" id="L20">      Logger.getLogger(RuntimeVirtualFieldSupplier.class.getName());</span>
+
+  /**
+   * This class is internal and is hence not for public use. Its APIs are unstable and can change at
+   * any time.
+   */
+  public interface VirtualFieldSupplier {
+    &lt;U extends T, V extends F, T, F&gt; VirtualField&lt;U, V&gt; find(Class&lt;T&gt; type, Class&lt;F&gt; fieldType);
+  }
+
+<span class="nc" id="L30">  private static final VirtualFieldSupplier DEFAULT = new CacheBasedVirtualFieldSupplier();</span>
+
+<span class="nc" id="L32">  private static volatile VirtualFieldSupplier instance = DEFAULT;</span>
+
+  public static void set(VirtualFieldSupplier virtualFieldSupplier) {
+    // only overwrite the default, cache-based supplier
+<span class="nc bnc" id="L36" title="All 2 branches missed.">    if (instance != DEFAULT) {</span>
+<span class="nc" id="L37">      logger.warning(</span>
+          &quot;Runtime VirtualField supplier has already been set up, further set() calls are ignored&quot;);
+<span class="nc" id="L39">      return;</span>
+    }
+<span class="nc" id="L41">    instance = virtualFieldSupplier;</span>
+<span class="nc" id="L42">  }</span>
+
+  public static VirtualFieldSupplier get() {
+<span class="nc" id="L45">    return instance;</span>
+  }
+
+<span class="nc" id="L48">  private static final class CacheBasedVirtualFieldSupplier implements VirtualFieldSupplier {</span>
+
+<span class="nc" id="L50">    private final Cache&lt;Class&lt;?&gt;, Cache&lt;Class&lt;?&gt;, VirtualField&lt;?, ?&gt;&gt;&gt;</span>
+<span class="nc" id="L51">        ownerToFieldToImplementationMap = Cache.weak();</span>
+
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;U extends T, V extends F, T, F&gt; VirtualField&lt;U, V&gt; find(
+        Class&lt;T&gt; type, Class&lt;F&gt; fieldType) {
+<span class="nc" id="L57">      return (VirtualField&lt;U, V&gt;)</span>
+          ownerToFieldToImplementationMap
+<span class="nc" id="L59">              .computeIfAbsent(type, c -&gt; Cache.weak())</span>
+<span class="nc" id="L60">              .computeIfAbsent(fieldType, c -&gt; new CacheBasedVirtualField&lt;&gt;());</span>
+    }
+  }
+
+<span class="nc" id="L64">  private static final class CacheBasedVirtualField&lt;T, F&gt; extends VirtualField&lt;T, F&gt; {</span>
+<span class="nc" id="L65">    private final Cache&lt;T, F&gt; cache = Cache.weak();</span>
+
+    @Override
+    @Nullable
+    public F get(T object) {
+<span class="nc" id="L70">      return cache.get(object);</span>
+    }
+
+    @Override
+    public void set(T object, @Nullable F fieldValue) {
+<span class="nc bnc" id="L75" title="All 2 branches missed.">      if (fieldValue == null) {</span>
+<span class="nc" id="L76">        cache.remove(object);</span>
+      } else {
+<span class="nc" id="L78">        cache.put(object, fieldValue);</span>
+      }
+<span class="nc" id="L80">    }</span>
+  }
+
+  private RuntimeVirtualFieldSupplier() {}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

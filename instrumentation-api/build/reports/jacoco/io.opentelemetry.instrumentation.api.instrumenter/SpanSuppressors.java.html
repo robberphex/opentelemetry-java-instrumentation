@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpanSuppressors.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.instrumenter</a> &gt; <span class="el_source">SpanSuppressors.java</span></div><h1>SpanSuppressors.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.instrumenter;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.instrumentation.api.internal.SpanKey;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Set;
+
+final class SpanSuppressors {
+
+  private SpanSuppressors() {}
+
+<span class="fc" id="L22">  enum Noop implements SpanSuppressor {</span>
+<span class="fc" id="L23">    INSTANCE;</span>
+
+    @Override
+    @CanIgnoreReturnValue
+    public Context storeInContext(Context context, SpanKind spanKind, Span span) {
+<span class="fc" id="L28">      return context;</span>
+    }
+
+    @Override
+    public boolean shouldSuppress(Context parentContext, SpanKind spanKind) {
+<span class="fc" id="L33">      return false;</span>
+    }
+  }
+
+  static final class DelegateBySpanKind implements SpanSuppressor {
+
+    private final Map&lt;SpanKind, SpanSuppressor&gt; delegates;
+
+<span class="fc" id="L41">    DelegateBySpanKind(Map&lt;SpanKind, SpanSuppressor&gt; delegates) {</span>
+<span class="fc" id="L42">      this.delegates = delegates;</span>
+<span class="fc" id="L43">    }</span>
+
+    @Override
+    public Context storeInContext(Context context, SpanKind spanKind, Span span) {
+<span class="fc" id="L47">      SpanSuppressor delegate = delegates.get(spanKind);</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">      if (delegate == null) {</span>
+<span class="nc" id="L49">        return context;</span>
+      }
+<span class="fc" id="L51">      return delegate.storeInContext(context, spanKind, span);</span>
+    }
+
+    @Override
+    public boolean shouldSuppress(Context parentContext, SpanKind spanKind) {
+<span class="nc" id="L56">      SpanSuppressor delegate = delegates.get(spanKind);</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">      if (delegate == null) {</span>
+<span class="nc" id="L58">        return false;</span>
+      }
+<span class="nc" id="L60">      return delegate.shouldSuppress(parentContext, spanKind);</span>
+    }
+  }
+
+  static final class BySpanKey implements SpanSuppressor {
+
+    private final Set&lt;SpanKey&gt; spanKeys;
+
+<span class="fc" id="L68">    BySpanKey(Set&lt;SpanKey&gt; spanKeys) {</span>
+<span class="fc" id="L69">      this.spanKeys = spanKeys;</span>
+<span class="fc" id="L70">    }</span>
+
+    @Override
+    public Context storeInContext(Context context, SpanKind spanKind, Span span) {
+<span class="fc bfc" id="L74" title="All 2 branches covered.">      for (SpanKey spanKey : spanKeys) {</span>
+<span class="fc" id="L75">        context = spanKey.storeInContext(context, span);</span>
+<span class="fc" id="L76">      }</span>
+<span class="fc" id="L77">      return context;</span>
+    }
+
+    @Override
+    public boolean shouldSuppress(Context parentContext, SpanKind spanKind) {
+<span class="fc bfc" id="L82" title="All 2 branches covered.">      for (SpanKey spanKey : spanKeys) {</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (spanKey.fromContextOrNull(parentContext) == null) {</span>
+<span class="fc" id="L84">          return false;</span>
+        }
+<span class="fc" id="L86">      }</span>
+<span class="fc" id="L87">      return true;</span>
+    }
+  }
+
+  static class ByContextKey implements SpanSuppressor {
+    private final SpanSuppressor delegate;
+    private final Method shouldSuppressInstrumentation;
+
+<span class="fc" id="L95">    ByContextKey(SpanSuppressor delegate) {</span>
+<span class="fc" id="L96">      this.delegate = delegate;</span>
+      Method shouldSuppressInstrumentation;
+      try {
+<span class="fc" id="L99">        Class&lt;?&gt; instrumentationUtil =</span>
+<span class="fc" id="L100">            Class.forName(&quot;io.opentelemetry.exporter.internal.InstrumentationUtil&quot;);</span>
+<span class="fc" id="L101">        shouldSuppressInstrumentation =</span>
+<span class="fc" id="L102">            instrumentationUtil.getDeclaredMethod(&quot;shouldSuppressInstrumentation&quot;, Context.class);</span>
+<span class="nc" id="L103">      } catch (ClassNotFoundException | NoSuchMethodException e) {</span>
+<span class="nc" id="L104">        shouldSuppressInstrumentation = null;</span>
+<span class="fc" id="L105">      }</span>
+<span class="fc" id="L106">      this.shouldSuppressInstrumentation = shouldSuppressInstrumentation;</span>
+<span class="fc" id="L107">    }</span>
+
+    @Override
+    public Context storeInContext(Context context, SpanKind spanKind, Span span) {
+<span class="fc" id="L111">      return delegate.storeInContext(context, spanKind, span);</span>
+    }
+
+    @Override
+    public boolean shouldSuppress(Context parentContext, SpanKind spanKind) {
+<span class="fc bfc" id="L116" title="All 2 branches covered.">      if (suppressByContextKey(parentContext)) {</span>
+<span class="fc" id="L117">        return true;</span>
+      }
+<span class="fc" id="L119">      return delegate.shouldSuppress(parentContext, spanKind);</span>
+    }
+
+    private boolean suppressByContextKey(Context context) {
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">      if (shouldSuppressInstrumentation == null) {</span>
+<span class="nc" id="L124">        return false;</span>
+      }
+
+      try {
+<span class="fc" id="L128">        return (boolean) shouldSuppressInstrumentation.invoke(null, context);</span>
+<span class="nc" id="L129">      } catch (IllegalAccessException | InvocationTargetException e) {</span>
+<span class="nc" id="L130">        return false;</span>
+      }
+    }
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

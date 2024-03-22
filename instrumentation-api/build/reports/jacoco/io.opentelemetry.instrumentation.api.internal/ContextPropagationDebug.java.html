@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContextPropagationDebug.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.internal</a> &gt; <span class="el_source">ContextPropagationDebug.java</span></div><h1>ContextPropagationDebug.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.internal;
+
+import static java.util.logging.Level.WARNING;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.ContextKey;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Logger;
+import javax.annotation.Nullable;
+
+/**
+ * This class is internal and is hence not for public use. Its APIs are unstable and can change at
+ * any time.
+ */
+public final class ContextPropagationDebug {
+<span class="fc" id="L24">  private static final Logger logger = Logger.getLogger(ContextPropagationDebug.class.getName());</span>
+
+  // locations where the context was propagated to another thread (tracking multiple steps is
+  // helpful in akka where there is so much recursive async spawning of new work)
+<span class="fc" id="L28">  private static final ContextKey&lt;ContextPropagationDebug&gt; THREAD_PROPAGATION_LOCATIONS =</span>
+<span class="fc" id="L29">      ContextKey.named(&quot;thread-propagation-locations&quot;);</span>
+
+  private static final boolean THREAD_PROPAGATION_DEBUGGER;
+  private static final boolean FAIL_ON_CONTEXT_LEAK;
+
+  static {
+<span class="fc" id="L35">    boolean agentDebugEnabled = ConfigPropertiesUtil.getBoolean(&quot;otel.javaagent.debug&quot;, false);</span>
+
+<span class="fc" id="L37">    THREAD_PROPAGATION_DEBUGGER =</span>
+<span class="fc" id="L38">        ConfigPropertiesUtil.getBoolean(</span>
+            &quot;otel.javaagent.experimental.thread-propagation-debugger.enabled&quot;, agentDebugEnabled);
+<span class="fc" id="L40">    FAIL_ON_CONTEXT_LEAK =</span>
+<span class="fc" id="L41">        ConfigPropertiesUtil.getBoolean(&quot;otel.javaagent.testing.fail-on-context-leak&quot;, false);</span>
+<span class="fc" id="L42">  }</span>
+
+  // context to which debug locations were added
+  private final Context sourceContext;
+  private final List&lt;Propagation&gt; locations;
+  // context after adding debug locations
+  private Context wrappedContext;
+
+<span class="nc" id="L50">  private ContextPropagationDebug(Context sourceContext) {</span>
+<span class="nc" id="L51">    this.sourceContext = sourceContext;</span>
+<span class="nc" id="L52">    this.locations = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="nc" id="L53">  }</span>
+
+  public static boolean isThreadPropagationDebuggerEnabled() {
+<span class="fc" id="L56">    return THREAD_PROPAGATION_DEBUGGER;</span>
+  }
+
+  public static Context addDebugInfo(Context context, Object carrier) {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">    if (ContextPropagationDebug.isThreadPropagationDebuggerEnabled()) {</span>
+<span class="nc" id="L61">      context =</span>
+<span class="nc" id="L62">          ContextPropagationDebug.appendLocations(</span>
+<span class="nc" id="L63">              context, new Exception().getStackTrace(), carrier);</span>
+    }
+<span class="nc" id="L65">    return context;</span>
+  }
+
+  public static Context appendLocations(
+      Context context, StackTraceElement[] locations, Object carrier) {
+<span class="nc" id="L70">    ContextPropagationDebug propagationDebug = ContextPropagationDebug.getPropagations(context);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">    if (propagationDebug == null) {</span>
+<span class="nc" id="L72">      propagationDebug = new ContextPropagationDebug(context);</span>
+<span class="nc" id="L73">      context = context.with(THREAD_PROPAGATION_LOCATIONS, propagationDebug);</span>
+<span class="nc" id="L74">      propagationDebug.wrappedContext = context;</span>
+    }
+<span class="nc" id="L76">    propagationDebug.locations.add(0, new Propagation(carrier.getClass().getName(), locations));</span>
+<span class="nc" id="L77">    return context;</span>
+  }
+
+  public static void debugContextLeakIfEnabled() {
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">    if (!isThreadPropagationDebuggerEnabled()) {</span>
+<span class="fc" id="L82">      return;</span>
+    }
+
+<span class="nc" id="L85">    Context current = Context.current();</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">    if (current != Context.root()) {</span>
+<span class="nc" id="L87">      logger.warning(&quot;Unexpected non-root current context found when extracting remote context!&quot;);</span>
+<span class="nc" id="L88">      Span currentSpan = Span.fromContextOrNull(current);</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">      if (currentSpan != null) {</span>
+<span class="nc" id="L90">        logger.log(WARNING, &quot;It contains this span: {0}&quot;, currentSpan);</span>
+      }
+
+<span class="nc" id="L93">      debugContextPropagation(current);</span>
+
+<span class="nc bnc" id="L95" title="All 2 branches missed.">      if (FAIL_ON_CONTEXT_LEAK) {</span>
+<span class="nc" id="L96">        throw new IllegalStateException(&quot;Context leak detected&quot;);</span>
+      }
+    }
+<span class="nc" id="L99">  }</span>
+
+  public static Context unwrap(Context context) {
+<span class="nc bnc" id="L102" title="All 4 branches missed.">    if (context == null || !isThreadPropagationDebuggerEnabled()) {</span>
+<span class="nc" id="L103">      return context;</span>
+    }
+
+<span class="nc" id="L106">    ContextPropagationDebug propagationDebug = ContextPropagationDebug.getPropagations(context);</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">    if (propagationDebug == null) {</span>
+<span class="nc" id="L108">      return context;</span>
+    }
+
+    // unwrap only if debug locations were the last thing that was added to the context
+<span class="nc bnc" id="L112" title="All 2 branches missed.">    return propagationDebug.wrappedContext == context ? propagationDebug.sourceContext : context;</span>
+  }
+
+  @Nullable
+  private static ContextPropagationDebug getPropagations(Context context) {
+<span class="nc" id="L117">    return context.get(THREAD_PROPAGATION_LOCATIONS);</span>
+  }
+
+  private static void debugContextPropagation(Context context) {
+<span class="nc" id="L121">    ContextPropagationDebug propagationDebug = getPropagations(context);</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">    if (propagationDebug != null) {</span>
+<span class="nc" id="L123">      List&lt;Propagation&gt; propagations = propagationDebug.locations;</span>
+<span class="nc" id="L124">      StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L125">      Iterator&lt;Propagation&gt; i = propagations.iterator();</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">      while (i.hasNext()) {</span>
+<span class="nc" id="L127">        Propagation entry = i.next();</span>
+<span class="nc" id="L128">        sb.append(&quot;\ncarrier of type: &quot;).append(entry.carrierClassName);</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        for (StackTraceElement ste : entry.location) {</span>
+<span class="nc" id="L130">          sb.append(&quot;\n    &quot;);</span>
+<span class="nc" id="L131">          sb.append(ste);</span>
+        }
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (i.hasNext()) {</span>
+<span class="nc" id="L134">          sb.append(&quot;\nwhich was propagated from:&quot;);</span>
+        }
+<span class="nc" id="L136">      }</span>
+<span class="nc" id="L137">      logger.log(WARNING, &quot;a context leak was detected. it was propagated from: {0}&quot;, sb);</span>
+    }
+<span class="nc" id="L139">  }</span>
+
+  private static class Propagation {
+    public final String carrierClassName;
+    public final StackTraceElement[] location;
+
+<span class="nc" id="L145">    public Propagation(String carrierClassName, StackTraceElement[] location) {</span>
+<span class="nc" id="L146">      this.carrierClassName = carrierClassName;</span>
+<span class="nc" id="L147">      this.location = location;</span>
+<span class="nc" id="L148">    }</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

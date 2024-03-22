@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpSpanStatusExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.http</a> &gt; <span class="el_source">HttpSpanStatusExtractor.java</span></div><h1>HttpSpanStatusExtractor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.http;
+
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.instrumentation.api.instrumenter.InstrumenterBuilder;
+import io.opentelemetry.instrumentation.api.instrumenter.SpanStatusBuilder;
+import io.opentelemetry.instrumentation.api.instrumenter.SpanStatusExtractor;
+import javax.annotation.Nullable;
+
+/**
+ * Extractor of the &lt;a
+ * href=&quot;https://github.com/open-telemetry/semantic-conventions/blob/v1.23.0/docs/http/http-spans.md#status&quot;&gt;HTTP
+ * span status&lt;/a&gt;.
+ *
+ * @since 2.0.0
+ */
+public final class HttpSpanStatusExtractor&lt;REQUEST, RESPONSE&gt;
+    implements SpanStatusExtractor&lt;REQUEST, RESPONSE&gt; {
+
+  /**
+   * Returns the HTTP client {@link SpanStatusExtractor}, which will use the HTTP status code to
+   * determine the {@link StatusCode} if available or fallback to {@linkplain #getDefault() the
+   * default status} otherwise.
+   *
+   * @see InstrumenterBuilder#setSpanStatusExtractor(SpanStatusExtractor)
+   */
+  public static &lt;REQUEST, RESPONSE&gt; SpanStatusExtractor&lt;REQUEST, RESPONSE&gt; create(
+      HttpClientAttributesGetter&lt;? super REQUEST, ? super RESPONSE&gt; getter) {
+<span class="fc" id="L33">    return new HttpSpanStatusExtractor&lt;&gt;(getter, HttpStatusCodeConverter.CLIENT);</span>
+  }
+
+  /**
+   * Returns the HTTP server {@link SpanStatusExtractor}, which will use the HTTP status code to
+   * determine the {@link StatusCode} if available or fallback to {@linkplain #getDefault() the
+   * default status} otherwise.
+   *
+   * @see InstrumenterBuilder#setSpanStatusExtractor(SpanStatusExtractor)
+   */
+  public static &lt;REQUEST, RESPONSE&gt; SpanStatusExtractor&lt;REQUEST, RESPONSE&gt; create(
+      HttpServerAttributesGetter&lt;? super REQUEST, ? super RESPONSE&gt; getter) {
+<span class="fc" id="L45">    return new HttpSpanStatusExtractor&lt;&gt;(getter, HttpStatusCodeConverter.SERVER);</span>
+  }
+
+  private final HttpCommonAttributesGetter&lt;? super REQUEST, ? super RESPONSE&gt; getter;
+  private final HttpStatusCodeConverter statusCodeConverter;
+
+  private HttpSpanStatusExtractor(
+      HttpCommonAttributesGetter&lt;? super REQUEST, ? super RESPONSE&gt; getter,
+<span class="fc" id="L53">      HttpStatusCodeConverter statusCodeConverter) {</span>
+<span class="fc" id="L54">    this.getter = getter;</span>
+<span class="fc" id="L55">    this.statusCodeConverter = statusCodeConverter;</span>
+<span class="fc" id="L56">  }</span>
+
+  @Override
+  public void extract(
+      SpanStatusBuilder spanStatusBuilder,
+      REQUEST request,
+      @Nullable RESPONSE response,
+      @Nullable Throwable error) {
+
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">    if (response != null) {</span>
+<span class="fc" id="L66">      Integer statusCode = getter.getHttpResponseStatusCode(request, response, error);</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">      if (statusCode != null) {</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (statusCodeConverter.isError(statusCode)) {</span>
+<span class="fc" id="L69">          spanStatusBuilder.setStatus(StatusCode.ERROR);</span>
+<span class="fc" id="L70">          return;</span>
+        }
+      }
+    }
+<span class="fc" id="L74">    SpanStatusExtractor.getDefault().extract(spanStatusBuilder, request, response, error);</span>
+<span class="fc" id="L75">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

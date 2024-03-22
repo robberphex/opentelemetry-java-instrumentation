@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpServerAddressAndPortExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.http</a> &gt; <span class="el_source">HttpServerAddressAndPortExtractor.java</span></div><h1>HttpServerAddressAndPortExtractor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.http;
+
+import static io.opentelemetry.instrumentation.api.semconv.http.HeaderParsingHelper.notFound;
+
+import io.opentelemetry.instrumentation.api.semconv.network.internal.AddressAndPortExtractor;
+import java.util.Locale;
+
+final class HttpServerAddressAndPortExtractor&lt;REQUEST&gt; implements AddressAndPortExtractor&lt;REQUEST&gt; {
+
+  private final HttpServerAttributesGetter&lt;REQUEST, ?&gt; getter;
+
+<span class="fc" id="L17">  HttpServerAddressAndPortExtractor(HttpServerAttributesGetter&lt;REQUEST, ?&gt; getter) {</span>
+<span class="fc" id="L18">    this.getter = getter;</span>
+<span class="fc" id="L19">  }</span>
+
+  @Override
+  public void extract(AddressPortSink sink, REQUEST request) {
+    // try Forwarded
+<span class="fc bfc" id="L24" title="All 2 branches covered.">    for (String forwarded : getter.getHttpRequestHeader(request, &quot;forwarded&quot;)) {</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">      if (extractFromForwardedHeader(sink, forwarded)) {</span>
+<span class="fc" id="L26">        return;</span>
+      }
+<span class="fc" id="L28">    }</span>
+
+    // try X-Forwarded-For
+<span class="fc bfc" id="L31" title="All 2 branches covered.">    for (String forwardedFor : getter.getHttpRequestHeader(request, &quot;x-forwarded-for&quot;)) {</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">      if (extractFromForwardedForHeader(sink, forwardedFor)) {</span>
+<span class="fc" id="L33">        return;</span>
+      }
+<span class="fc" id="L35">    }</span>
+
+    // use network.peer.address and network.peer.port
+<span class="fc" id="L38">    sink.setAddress(getter.getNetworkPeerAddress(request, null));</span>
+<span class="fc" id="L39">    Integer port = getter.getNetworkPeerPort(request, null);</span>
+<span class="pc bpc" id="L40" title="1 of 4 branches missed.">    if (port != null &amp;&amp; port &gt; 0) {</span>
+<span class="nc" id="L41">      sink.setPort(port);</span>
+    }
+<span class="fc" id="L43">  }</span>
+
+  private static boolean extractFromForwardedHeader(AddressPortSink sink, String forwarded) {
+<span class="fc" id="L46">    int start = forwarded.toLowerCase(Locale.ROOT).indexOf(&quot;for=&quot;);</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">    if (start &lt; 0) {</span>
+<span class="fc" id="L48">      return false;</span>
+    }
+<span class="fc" id="L50">    start += &quot;for=&quot;.length(); // start is now the index after for=</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">    if (start &gt;= forwarded.length() - 1) { // the value after for= must not be empty</span>
+<span class="fc" id="L52">      return false;</span>
+    }
+    // find the end of the `for=&lt;address&gt;` section
+<span class="fc" id="L55">    int end = forwarded.indexOf(';', start);</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">    if (end &lt; 0) {</span>
+<span class="fc" id="L57">      end = forwarded.length();</span>
+    }
+<span class="fc" id="L59">    return extractClientInfo(sink, forwarded, start, end);</span>
+  }
+
+  private static boolean extractFromForwardedForHeader(AddressPortSink sink, String forwardedFor) {
+<span class="fc" id="L63">    return extractClientInfo(sink, forwardedFor, 0, forwardedFor.length());</span>
+  }
+
+  // from https://www.rfc-editor.org/rfc/rfc7239
+  //  &quot;Note that IPv6 addresses may not be quoted in
+  //   X-Forwarded-For and may not be enclosed by square brackets, but they
+  //   are quoted and enclosed in square brackets in Forwarded&quot;
+  // and also (applying to Forwarded but not X-Forwarded-For)
+  //  &quot;It is important to note that an IPv6 address and any nodename with
+  //   node-port specified MUST be quoted, since ':' is not an allowed
+  //   character in 'token'.&quot;
+  private static boolean extractClientInfo(
+      AddressPortSink sink, String forwarded, int start, int end) {
+<span class="fc bfc" id="L76" title="All 2 branches covered.">    if (start &gt;= end) {</span>
+<span class="fc" id="L77">      return false;</span>
+    }
+
+    // skip quotes
+<span class="fc bfc" id="L81" title="All 2 branches covered.">    if (forwarded.charAt(start) == '&quot;') {</span>
+      // try to find the end of the quote
+<span class="fc" id="L83">      int quoteEnd = forwarded.indexOf('&quot;', start + 1);</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">      if (notFound(quoteEnd, end)) {</span>
+        // malformed header value
+<span class="fc" id="L86">        return false;</span>
+      }
+<span class="fc" id="L88">      return extractClientInfo(sink, forwarded, start + 1, quoteEnd);</span>
+    }
+
+    // ipv6 address enclosed in square brackets case
+<span class="fc bfc" id="L92" title="All 2 branches covered.">    if (forwarded.charAt(start) == '[') {</span>
+<span class="fc" id="L93">      int ipv6End = forwarded.indexOf(']', start + 1);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">      if (notFound(ipv6End, end)) {</span>
+        // malformed header value
+<span class="fc" id="L96">        return false;</span>
+      }
+<span class="fc" id="L98">      sink.setAddress(forwarded.substring(start + 1, ipv6End));</span>
+
+<span class="fc" id="L100">      return true;</span>
+    }
+
+    // try to match either ipv4 or ipv6 without brackets
+<span class="fc" id="L104">    boolean inIpv4 = false;</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">    for (int i = start; i &lt; end; ++i) {</span>
+<span class="fc" id="L106">      char c = forwarded.charAt(i);</span>
+
+      // dots only appear in ipv4
+<span class="fc bfc" id="L109" title="All 2 branches covered.">      if (c == '.') {</span>
+<span class="fc" id="L110">        inIpv4 = true;</span>
+      }
+
+      // find the character terminating the address
+<span class="fc bfc" id="L114" title="All 4 branches covered.">      boolean isIpv4PortSeparator = inIpv4 &amp;&amp; c == ':';</span>
+<span class="pc bpc" id="L115" title="1 of 8 branches missed.">      if (c == ',' || c == ';' || c == '&quot;' || isIpv4PortSeparator) {</span>
+        // empty string
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (i == start) {</span>
+<span class="fc" id="L118">          return false;</span>
+        }
+
+<span class="fc" id="L121">        sink.setAddress(forwarded.substring(start, i));</span>
+<span class="fc" id="L122">        return true;</span>
+      }
+    }
+
+    // just an address without a port
+<span class="fc" id="L127">    sink.setAddress(forwarded.substring(start, end));</span>
+<span class="fc" id="L128">    return true;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

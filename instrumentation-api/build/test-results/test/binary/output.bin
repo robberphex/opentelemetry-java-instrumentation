@@ -1,0 +1,1 @@
+QS¢EnvironmentVariableExtension: This extension uses reflection to mutate JDK-internal state, which is fragile. Check the Javadoc or documentation for more details.

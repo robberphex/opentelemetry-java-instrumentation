@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" tests="48" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:19" hostname="luyanbo-MBP.local" time="0.368">
+  <properties/>
+  <testcase name="[1] [], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.093"/>
+  <testcase name="[2] [&quot;], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.009"/>
+  <testcase name="[3] [&quot;&quot;], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.008"/>
+  <testcase name="[4] [example.com], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.006"/>
+  <testcase name="[5] [example.com:port], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.005"/>
+  <testcase name="[6] [example.com:42], example.com, 42" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.005"/>
+  <testcase name="[7] [&quot;example.com&quot;], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.006"/>
+  <testcase name="[8] [&quot;example.com:port&quot;], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[9] [&quot;example.com:42&quot;], example.com, 42" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.005"/>
+  <testcase name="[10] [example.com, github.com:1234], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.006"/>
+  <testcase name="[1] [], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[2] [host=], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[3] [host=;], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.005"/>
+  <testcase name="[4] [host=&quot;], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[5] [host=&quot;&quot;], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[6] [host=&quot;example.com], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[7] [by=1.2.3.4, test=abc], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[8] [host=example.com], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[9] [host=&quot;example.com&quot;], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[10] [host=example.com; test=abc:1234], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[11] [host=&quot;example.com&quot;; test=abc:1234], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[12] [host=example.com:port], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[13] [host=&quot;example.com:port&quot;], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[14] [host=example.com:42], example.com, 42" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[15] [host=&quot;example.com:42&quot;], example.com, 42" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[16] [host=example.com:42; test=abc:1234], example.com, 42" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[17] [host=&quot;example.com:42&quot;; test=abc:1234], example.com, 42" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[18] [proto=https, host=example.com, host=github.com:1234], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[1] [], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[2] [&quot;], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.005"/>
+  <testcase name="[3] [&quot;&quot;], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[4] [example.com], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[5] [example.com:port], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[6] [example.com:42], example.com, 42" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[7] [&quot;example.com&quot;], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[8] [&quot;example.com:port&quot;], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[9] [&quot;example.com:42&quot;], example.com, 42" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[10] [example.com, github.com:1234], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[1] [], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.005"/>
+  <testcase name="[2] [&quot;], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.006"/>
+  <testcase name="[3] [&quot;&quot;], null, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[4] [example.com], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[5] [example.com:port], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.005"/>
+  <testcase name="[6] [example.com:42], example.com, 42" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[7] [&quot;example.com&quot;], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[8] [&quot;example.com:port&quot;], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.005"/>
+  <testcase name="[9] [&quot;example.com:42&quot;], example.com, 42" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.005"/>
+  <testcase name="[10] [example.com, github.com:1234], example.com, null" classname="io.opentelemetry.instrumentation.api.semconv.http.ForwardedHostAddressAndPortExtractorTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

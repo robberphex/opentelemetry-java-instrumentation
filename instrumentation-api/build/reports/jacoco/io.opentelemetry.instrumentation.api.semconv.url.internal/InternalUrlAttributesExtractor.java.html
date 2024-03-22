@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InternalUrlAttributesExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.url.internal</a> &gt; <span class="el_source">InternalUrlAttributesExtractor.java</span></div><h1>InternalUrlAttributesExtractor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.url.internal;
+
+import static io.opentelemetry.instrumentation.api.internal.AttributesExtractorUtil.internalSet;
+
+import io.opentelemetry.api.common.AttributesBuilder;
+import io.opentelemetry.instrumentation.api.semconv.url.UrlAttributesGetter;
+import io.opentelemetry.semconv.SemanticAttributes;
+import java.util.function.Function;
+
+/**
+ * This class is internal and is hence not for public use. Its APIs are unstable and can change at
+ * any time.
+ */
+public final class InternalUrlAttributesExtractor&lt;REQUEST&gt; {
+
+  private final UrlAttributesGetter&lt;REQUEST&gt; getter;
+  private final Function&lt;REQUEST, String&gt; alternateSchemeProvider;
+
+  public InternalUrlAttributesExtractor(
+<span class="fc" id="L25">      UrlAttributesGetter&lt;REQUEST&gt; getter, Function&lt;REQUEST, String&gt; alternateSchemeProvider) {</span>
+<span class="fc" id="L26">    this.getter = getter;</span>
+<span class="fc" id="L27">    this.alternateSchemeProvider = alternateSchemeProvider;</span>
+<span class="fc" id="L28">  }</span>
+
+  public void onStart(AttributesBuilder attributes, REQUEST request) {
+<span class="fc" id="L31">    String urlScheme = getUrlScheme(request);</span>
+<span class="fc" id="L32">    String urlPath = getter.getUrlPath(request);</span>
+<span class="fc" id="L33">    String urlQuery = getter.getUrlQuery(request);</span>
+
+<span class="fc" id="L35">    internalSet(attributes, SemanticAttributes.URL_SCHEME, urlScheme);</span>
+<span class="fc" id="L36">    internalSet(attributes, SemanticAttributes.URL_PATH, urlPath);</span>
+<span class="fc" id="L37">    internalSet(attributes, SemanticAttributes.URL_QUERY, urlQuery);</span>
+<span class="fc" id="L38">  }</span>
+
+  private String getUrlScheme(REQUEST request) {
+<span class="fc" id="L41">    String urlScheme = alternateSchemeProvider.apply(request);</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">    if (urlScheme == null) {</span>
+<span class="fc" id="L43">      urlScheme = getter.getUrlScheme(request);</span>
+    }
+<span class="fc" id="L45">    return urlScheme;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

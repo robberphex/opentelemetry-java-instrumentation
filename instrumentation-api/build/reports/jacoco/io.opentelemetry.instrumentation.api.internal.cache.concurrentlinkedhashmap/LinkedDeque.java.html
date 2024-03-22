@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LinkedDeque.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.internal.cache.concurrentlinkedhashmap</a> &gt; <span class="el_source">LinkedDeque.java</span></div><h1>LinkedDeque.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+// Includes work from:
+/*
+ * Copyright 2011 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.opentelemetry.instrumentation.api.internal.cache.concurrentlinkedhashmap;
+
+import java.util.AbstractCollection;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import javax.annotation.concurrent.NotThreadSafe;
+
+/**
+ * Linked list implementation of the {@link Deque} interface where the link pointers are tightly
+ * integrated with the element. Linked deques have no capacity restrictions; they grow as necessary
+ * to support usage. They are not thread-safe; in the absence of external synchronization, they do
+ * not support concurrent access by multiple threads. Null elements are prohibited.
+ *
+ * &lt;p&gt;Most &lt;tt&gt;LinkedDeque&lt;/tt&gt; operations run in constant time by assuming that the {@link Linked}
+ * parameter is associated with the deque instance. Any usage that violates this assumption will
+ * result in non-deterministic behavior.
+ *
+ * &lt;p&gt;The iterators returned by this class are &lt;em&gt;not&lt;/em&gt; &lt;i&gt;fail-fast&lt;/i&gt;: If the deque is
+ * modified at any time after the iterator is created, the iterator will be in an unknown state.
+ * Thus, in the face of concurrent modification, the iterator risks arbitrary, non-deterministic
+ * behavior at an undetermined time in the future.
+ *
+ * @author ben.manes@gmail.com (Ben Manes)
+ * @param &lt;E&gt; the type of elements held in this collection
+ * @see &lt;a href=&quot;http://code.google.com/p/concurrentlinkedhashmap/&quot;&gt;
+ *     http://code.google.com/p/concurrentlinkedhashmap/&lt;/a&gt;
+ */
+@NotThreadSafe
+<span class="fc" id="L53">final class LinkedDeque&lt;E extends LinkedDeque.Linked&lt;E&gt;&gt; extends AbstractCollection&lt;E&gt;</span>
+    implements Deque&lt;E&gt; {
+
+  // This class provides a doubly-linked list that is optimized for the virtual
+  // machine. The first and last elements are manipulated instead of a slightly
+  // more convenient sentinel element to avoid the insertion of null checks with
+  // NullPointerException throws in the byte code. The links to a removed
+  // element are cleared to help a generational garbage collector if the
+  // discarded elements inhabit more than one generation.
+
+  /** Pointer to first node. Invariant: (first == null &amp;&amp; last == null) || (first.prev == null) */
+  E first;
+
+  /** Pointer to last node. Invariant: (first == null &amp;&amp; last == null) || (last.next == null) */
+  E last;
+
+  /**
+   * Links the element to the front of the deque so that it becomes the first element.
+   *
+   * @param e the unlinked element
+   */
+  void linkFirst(final E e) {
+<span class="nc" id="L75">    final E f = first;</span>
+<span class="nc" id="L76">    first = e;</span>
+
+<span class="nc bnc" id="L78" title="All 2 branches missed.">    if (f == null) {</span>
+<span class="nc" id="L79">      last = e;</span>
+    } else {
+<span class="nc" id="L81">      f.setPrevious(e);</span>
+<span class="nc" id="L82">      e.setNext(f);</span>
+    }
+<span class="nc" id="L84">  }</span>
+
+  /**
+   * Links the element to the back of the deque so that it becomes the last element.
+   *
+   * @param e the unlinked element
+   */
+  void linkLast(final E e) {
+<span class="fc" id="L92">    final E l = last;</span>
+<span class="fc" id="L93">    last = e;</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">    if (l == null) {</span>
+<span class="fc" id="L96">      first = e;</span>
+    } else {
+<span class="fc" id="L98">      l.setNext(e);</span>
+<span class="fc" id="L99">      e.setPrevious(l);</span>
+    }
+<span class="fc" id="L101">  }</span>
+
+  /** Unlinks the non-null first element. */
+  E unlinkFirst() {
+<span class="fc" id="L105">    final E f = first;</span>
+<span class="fc" id="L106">    final E next = f.getNext();</span>
+<span class="fc" id="L107">    f.setNext(null);</span>
+
+<span class="fc" id="L109">    first = next;</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">    if (next == null) {</span>
+<span class="nc" id="L111">      last = null;</span>
+    } else {
+<span class="fc" id="L113">      next.setPrevious(null);</span>
+    }
+<span class="fc" id="L115">    return f;</span>
+  }
+
+  /** Unlinks the non-null last element. */
+  E unlinkLast() {
+<span class="nc" id="L120">    final E l = last;</span>
+<span class="nc" id="L121">    final E prev = l.getPrevious();</span>
+<span class="nc" id="L122">    l.setPrevious(null);</span>
+<span class="nc" id="L123">    last = prev;</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">    if (prev == null) {</span>
+<span class="nc" id="L125">      first = null;</span>
+    } else {
+<span class="nc" id="L127">      prev.setNext(null);</span>
+    }
+<span class="nc" id="L129">    return l;</span>
+  }
+
+  /** Unlinks the non-null element. */
+  void unlink(E e) {
+<span class="fc" id="L134">    final E prev = e.getPrevious();</span>
+<span class="fc" id="L135">    final E next = e.getNext();</span>
+
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">    if (prev == null) {</span>
+<span class="fc" id="L138">      first = next;</span>
+    } else {
+<span class="nc" id="L140">      prev.setNext(next);</span>
+<span class="nc" id="L141">      e.setPrevious(null);</span>
+    }
+
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">    if (next == null) {</span>
+<span class="fc" id="L145">      last = prev;</span>
+    } else {
+<span class="nc" id="L147">      next.setPrevious(prev);</span>
+<span class="nc" id="L148">      e.setNext(null);</span>
+    }
+<span class="fc" id="L150">  }</span>
+
+  @Override
+  public boolean isEmpty() {
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">    return (first == null);</span>
+  }
+
+  void checkNotEmpty() {
+<span class="nc bnc" id="L158" title="All 2 branches missed.">    if (isEmpty()) {</span>
+<span class="nc" id="L159">      throw new NoSuchElementException();</span>
+    }
+<span class="nc" id="L161">  }</span>
+
+  /**
+   * {@inheritDoc}
+   *
+   * &lt;p&gt;Beware that, unlike in most collections, this method is &lt;em&gt;NOT&lt;/em&gt; a constant-time
+   * operation.
+   */
+  @Override
+  public int size() {
+<span class="nc" id="L171">    int size = 0;</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">    for (E e = first; e != null; e = e.getNext()) {</span>
+<span class="nc" id="L173">      size++;</span>
+    }
+<span class="nc" id="L175">    return size;</span>
+  }
+
+  @Override
+  public void clear() {
+<span class="nc bnc" id="L180" title="All 2 branches missed.">    for (E e = first; e != null; ) {</span>
+<span class="nc" id="L181">      E next = e.getNext();</span>
+<span class="nc" id="L182">      e.setPrevious(null);</span>
+<span class="nc" id="L183">      e.setNext(null);</span>
+<span class="nc" id="L184">      e = next;</span>
+<span class="nc" id="L185">    }</span>
+<span class="nc" id="L186">    first = last = null;</span>
+<span class="nc" id="L187">  }</span>
+
+  @Override
+  public boolean contains(Object o) {
+<span class="nc bnc" id="L191" title="All 4 branches missed.">    return (o instanceof Linked&lt;?&gt;) &amp;&amp; contains((Linked&lt;?&gt;) o);</span>
+  }
+
+  // A fast-path containment check
+  boolean contains(Linked&lt;?&gt; e) {
+<span class="pc bpc" id="L196" title="2 of 6 branches missed.">    return (e.getPrevious() != null) || (e.getNext() != null) || (e == first);</span>
+  }
+
+  /**
+   * Moves the element to the front of the deque so that it becomes the first element.
+   *
+   * @param e the linked element
+   */
+  public void moveToFront(E e) {
+<span class="nc bnc" id="L205" title="All 2 branches missed.">    if (e != first) {</span>
+<span class="nc" id="L206">      unlink(e);</span>
+<span class="nc" id="L207">      linkFirst(e);</span>
+    }
+<span class="nc" id="L209">  }</span>
+
+  /**
+   * Moves the element to the back of the deque so that it becomes the last element.
+   *
+   * @param e the linked element
+   */
+  public void moveToBack(E e) {
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">    if (e != last) {</span>
+<span class="nc" id="L218">      unlink(e);</span>
+<span class="nc" id="L219">      linkLast(e);</span>
+    }
+<span class="fc" id="L221">  }</span>
+
+  @Override
+  public E peek() {
+<span class="nc" id="L225">    return peekFirst();</span>
+  }
+
+  @Override
+  public E peekFirst() {
+<span class="nc" id="L230">    return first;</span>
+  }
+
+  @Override
+  public E peekLast() {
+<span class="nc" id="L235">    return last;</span>
+  }
+
+  @Override
+  public E getFirst() {
+<span class="nc" id="L240">    checkNotEmpty();</span>
+<span class="nc" id="L241">    return peekFirst();</span>
+  }
+
+  @Override
+  public E getLast() {
+<span class="nc" id="L246">    checkNotEmpty();</span>
+<span class="nc" id="L247">    return peekLast();</span>
+  }
+
+  @Override
+  public E element() {
+<span class="nc" id="L252">    return getFirst();</span>
+  }
+
+  @Override
+  public boolean offer(E e) {
+<span class="nc" id="L257">    return offerLast(e);</span>
+  }
+
+  @Override
+  public boolean offerFirst(E e) {
+<span class="nc bnc" id="L262" title="All 2 branches missed.">    if (contains(e)) {</span>
+<span class="nc" id="L263">      return false;</span>
+    }
+<span class="nc" id="L265">    linkFirst(e);</span>
+<span class="nc" id="L266">    return true;</span>
+  }
+
+  @Override
+  public boolean offerLast(E e) {
+<span class="pc bpc" id="L271" title="1 of 2 branches missed.">    if (contains(e)) {</span>
+<span class="nc" id="L272">      return false;</span>
+    }
+<span class="fc" id="L274">    linkLast(e);</span>
+<span class="fc" id="L275">    return true;</span>
+  }
+
+  @Override
+  public boolean add(E e) {
+<span class="fc" id="L280">    return offerLast(e);</span>
+  }
+
+  @Override
+  public void addFirst(E e) {
+<span class="nc bnc" id="L285" title="All 2 branches missed.">    if (!offerFirst(e)) {</span>
+<span class="nc" id="L286">      throw new IllegalArgumentException();</span>
+    }
+<span class="nc" id="L288">  }</span>
+
+  @Override
+  public void addLast(E e) {
+<span class="nc bnc" id="L292" title="All 2 branches missed.">    if (!offerLast(e)) {</span>
+<span class="nc" id="L293">      throw new IllegalArgumentException();</span>
+    }
+<span class="nc" id="L295">  }</span>
+
+  @Override
+  public E poll() {
+<span class="fc" id="L299">    return pollFirst();</span>
+  }
+
+  @Override
+  public E pollFirst() {
+<span class="pc bpc" id="L304" title="1 of 2 branches missed.">    return isEmpty() ? null : unlinkFirst();</span>
+  }
+
+  @Override
+  public E pollLast() {
+<span class="nc bnc" id="L309" title="All 2 branches missed.">    return isEmpty() ? null : unlinkLast();</span>
+  }
+
+  @Override
+  public E remove() {
+<span class="nc" id="L314">    return removeFirst();</span>
+  }
+
+  @Override
+  @SuppressWarnings(&quot;unchecked&quot;)
+  public boolean remove(Object o) {
+<span class="nc bnc" id="L320" title="All 4 branches missed.">    return (o instanceof Linked&lt;?&gt;) &amp;&amp; remove((E) o);</span>
+  }
+
+  // A fast-path removal
+  boolean remove(E e) {
+<span class="pc bpc" id="L325" title="1 of 2 branches missed.">    if (contains(e)) {</span>
+<span class="fc" id="L326">      unlink(e);</span>
+<span class="fc" id="L327">      return true;</span>
+    }
+<span class="nc" id="L329">    return false;</span>
+  }
+
+  @Override
+  public E removeFirst() {
+<span class="nc" id="L334">    checkNotEmpty();</span>
+<span class="nc" id="L335">    return pollFirst();</span>
+  }
+
+  @Override
+  public boolean removeFirstOccurrence(Object o) {
+<span class="nc" id="L340">    return remove(o);</span>
+  }
+
+  @Override
+  public E removeLast() {
+<span class="nc" id="L345">    checkNotEmpty();</span>
+<span class="nc" id="L346">    return pollLast();</span>
+  }
+
+  @Override
+  public boolean removeLastOccurrence(Object o) {
+<span class="nc" id="L351">    return remove(o);</span>
+  }
+
+  @Override
+  public boolean removeAll(Collection&lt;?&gt; c) {
+<span class="nc" id="L356">    boolean modified = false;</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">    for (Object o : c) {</span>
+<span class="nc" id="L358">      modified |= remove(o);</span>
+<span class="nc" id="L359">    }</span>
+<span class="nc" id="L360">    return modified;</span>
+  }
+
+  @Override
+  public void push(E e) {
+<span class="nc" id="L365">    addFirst(e);</span>
+<span class="nc" id="L366">  }</span>
+
+  @Override
+  public E pop() {
+<span class="nc" id="L370">    return removeFirst();</span>
+  }
+
+  @Override
+  public Iterator&lt;E&gt; iterator() {
+<span class="nc" id="L375">    return new AbstractLinkedIterator(first) {</span>
+      @Override
+      E computeNext() {
+<span class="nc" id="L378">        return cursor.getNext();</span>
+      }
+    };
+  }
+
+  @Override
+  public Iterator&lt;E&gt; descendingIterator() {
+<span class="nc" id="L385">    return new AbstractLinkedIterator(last) {</span>
+      @Override
+      E computeNext() {
+<span class="nc" id="L388">        return cursor.getPrevious();</span>
+      }
+    };
+  }
+
+  abstract class AbstractLinkedIterator implements Iterator&lt;E&gt; {
+    E cursor;
+
+    /**
+     * Creates an iterator that can can traverse the deque.
+     *
+     * @param start the initial element to begin traversal from
+     */
+<span class="nc" id="L401">    AbstractLinkedIterator(E start) {</span>
+<span class="nc" id="L402">      cursor = start;</span>
+<span class="nc" id="L403">    }</span>
+
+    @Override
+    public boolean hasNext() {
+<span class="nc bnc" id="L407" title="All 2 branches missed.">      return (cursor != null);</span>
+    }
+
+    @Override
+    public E next() {
+<span class="nc bnc" id="L412" title="All 2 branches missed.">      if (!hasNext()) {</span>
+<span class="nc" id="L413">        throw new NoSuchElementException();</span>
+      }
+<span class="nc" id="L415">      E e = cursor;</span>
+<span class="nc" id="L416">      cursor = computeNext();</span>
+<span class="nc" id="L417">      return e;</span>
+    }
+
+    @Override
+    public void remove() {
+<span class="nc" id="L422">      throw new UnsupportedOperationException();</span>
+    }
+
+    /** Retrieves the next element to traverse to or &lt;tt&gt;null&lt;/tt&gt; if there are no more elements. */
+    abstract E computeNext();
+  }
+
+  /** An element that is linked on the {@link Deque}. */
+  interface Linked&lt;T extends Linked&lt;T&gt;&gt; {
+
+    /**
+     * Retrieves the previous element or &lt;tt&gt;null&lt;/tt&gt; if either the element is unlinked or the
+     * first element on the deque.
+     */
+    T getPrevious();
+
+    /** Sets the previous element or &lt;tt&gt;null&lt;/tt&gt; if there is no link. */
+    void setPrevious(T prev);
+
+    /**
+     * Retrieves the next element or &lt;tt&gt;null&lt;/tt&gt; if either the element is unlinked or the last
+     * element on the deque.
+     */
+    T getNext();
+
+    /** Sets the next element or &lt;tt&gt;null&lt;/tt&gt; if there is no link. */
+    void setNext(T next);
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

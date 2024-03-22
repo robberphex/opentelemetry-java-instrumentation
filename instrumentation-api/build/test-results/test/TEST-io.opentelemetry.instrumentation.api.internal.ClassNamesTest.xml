@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.internal.ClassNamesTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:18" hostname="luyanbo-MBP.local" time="0.019">
+  <properties/>
+  <testcase name="testAnonymous()" classname="io.opentelemetry.instrumentation.api.internal.ClassNamesTest" time="0.015"/>
+  <testcase name="testNamed()" classname="io.opentelemetry.instrumentation.api.internal.ClassNamesTest" time="0.001"/>
+  <testcase name="testLambda()" classname="io.opentelemetry.instrumentation.api.internal.ClassNamesTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - ForwardedHostAddressAndPortExtractorTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>ForwardedHostAddressAndPortExtractorTest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/io.opentelemetry.instrumentation.api.semconv.http.html">io.opentelemetry.instrumentation.api.semconv.http</a> &gt; ForwardedHostAddressAndPortExtractorTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">48</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">0.285s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success" id="successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Tests</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Method name</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="success">[10] [host=example.com; test=abc:1234], example.com, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[10]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[11] [host=&quot;example.com&quot;; test=abc:1234], example.com, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[11]</td>
+<td class="success">0.002s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[12] [host=example.com:port], example.com, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[12]</td>
+<td class="success">0.002s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[13] [host=&quot;example.com:port&quot;], example.com, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[13]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[14] [host=example.com:42], example.com, 42</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[14]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[15] [host=&quot;example.com:42&quot;], example.com, 42</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[15]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[16] [host=example.com:42; test=abc:1234], example.com, 42</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[16]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[17] [host=&quot;example.com:42&quot;; test=abc:1234], example.com, 42</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[17]</td>
+<td class="success">0.002s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[18] [proto=https, host=example.com, host=github.com:1234], example.com, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[18]</td>
+<td class="success">0.002s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[1] [], null, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[1]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[2] [host=], null, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[2]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[3] [host=;], null, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[3]</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[4] [host=&quot;], null, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[4]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[5] [host=&quot;&quot;], null, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[5]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[6] [host=&quot;example.com], null, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[6]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[7] [by=1.2.3.4, test=abc], null, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[7]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[8] [host=example.com], example.com, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[8]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[9] [host=&quot;example.com&quot;], example.com, null</td>
+<td class="success">shouldParseForwarded(List, String, Integer)[9]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[10] [example.com, github.com:1234], example.com, null</td>
+<td class="success">shouldParseForwardedHost(List, String, Integer)[10]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[1] [], null, null</td>
+<td class="success">shouldParseForwardedHost(List, String, Integer)[1]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[2] [&quot;], null, null</td>
+<td class="success">shouldParseForwardedHost(List, String, Integer)[2]</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[3] [&quot;&quot;], null, null</td>
+<td class="success">shouldParseForwardedHost(List, String, Integer)[3]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[4] [example.com], example.com, null</td>
+<td class="success">shouldParseForwardedHost(List, String, Integer)[4]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[5] [example.com:port], example.com, null</td>
+<td class="success">shouldParseForwardedHost(List, String, Integer)[5]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[6] [example.com:42], example.com, 42</td>
+<td class="success">shouldParseForwardedHost(List, String, Integer)[6]</td>
+<td class="success">0.002s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[7] [&quot;example.com&quot;], example.com, null</td>
+<td class="success">shouldParseForwardedHost(List, String, Integer)[7]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[8] [&quot;example.com:port&quot;], example.com, null</td>
+<td class="success">shouldParseForwardedHost(List, String, Integer)[8]</td>
+<td class="success">0.002s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[9] [&quot;example.com:42&quot;], example.com, 42</td>
+<td class="success">shouldParseForwardedHost(List, String, Integer)[9]</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[10] [example.com, github.com:1234], example.com, null</td>
+<td class="success">shouldParseHost(List, String, Integer)[10]</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[1] [], null, null</td>
+<td class="success">shouldParseHost(List, String, Integer)[1]</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[2] [&quot;], null, null</td>
+<td class="success">shouldParseHost(List, String, Integer)[2]</td>
+<td class="success">0.006s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[3] [&quot;&quot;], null, null</td>
+<td class="success">shouldParseHost(List, String, Integer)[3]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[4] [example.com], example.com, null</td>
+<td class="success">shouldParseHost(List, String, Integer)[4]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[5] [example.com:port], example.com, null</td>
+<td class="success">shouldParseHost(List, String, Integer)[5]</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[6] [example.com:42], example.com, 42</td>
+<td class="success">shouldParseHost(List, String, Integer)[6]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[7] [&quot;example.com&quot;], example.com, null</td>
+<td class="success">shouldParseHost(List, String, Integer)[7]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[8] [&quot;example.com:port&quot;], example.com, null</td>
+<td class="success">shouldParseHost(List, String, Integer)[8]</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[9] [&quot;example.com:42&quot;], example.com, 42</td>
+<td class="success">shouldParseHost(List, String, Integer)[9]</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[10] [example.com, github.com:1234], example.com, null</td>
+<td class="success">shouldParsePseudoAuthority(List, String, Integer)[10]</td>
+<td class="success">0.006s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[1] [], null, null</td>
+<td class="success">shouldParsePseudoAuthority(List, String, Integer)[1]</td>
+<td class="success">0.093s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[2] [&quot;], null, null</td>
+<td class="success">shouldParsePseudoAuthority(List, String, Integer)[2]</td>
+<td class="success">0.009s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[3] [&quot;&quot;], null, null</td>
+<td class="success">shouldParsePseudoAuthority(List, String, Integer)[3]</td>
+<td class="success">0.008s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[4] [example.com], example.com, null</td>
+<td class="success">shouldParsePseudoAuthority(List, String, Integer)[4]</td>
+<td class="success">0.006s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[5] [example.com:port], example.com, null</td>
+<td class="success">shouldParsePseudoAuthority(List, String, Integer)[5]</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[6] [example.com:42], example.com, 42</td>
+<td class="success">shouldParsePseudoAuthority(List, String, Integer)[6]</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[7] [&quot;example.com&quot;], example.com, null</td>
+<td class="success">shouldParsePseudoAuthority(List, String, Integer)[7]</td>
+<td class="success">0.006s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[8] [&quot;example.com:port&quot;], example.com, null</td>
+<td class="success">shouldParsePseudoAuthority(List, String, Integer)[8]</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[9] [&quot;example.com:42&quot;], example.com, 42</td>
+<td class="success">shouldParsePseudoAuthority(List, String, Integer)[9]</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="http://www.gradle.org">Gradle 8.6</a> at 2024年3月22日 下午8:44:21</p>
+</div>
+</div>
+</body>
+</html>

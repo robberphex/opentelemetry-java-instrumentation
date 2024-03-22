@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:18" hostname="luyanbo-MBP.local" time="0.047">
+  <properties/>
+  <testcase name="getInt_invalidNumber()" classname="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" time="0.015"/>
+  <testcase name="getInt_none()" classname="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" time="0.001"/>
+  <testcase name="getString_systemProperty()" classname="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" time="0.015">
+    <system-out><![CDATA[EnvironmentVariableExtension: This extension uses reflection to mutate JDK-internal state, which is fragile. Check the Javadoc or documentation for more details.
+]]></system-out>
+  </testcase>
+  <testcase name="getBoolean_none()" classname="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" time="0.0"/>
+  <testcase name="getBoolean_environmentVariable()" classname="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" time="0.001"/>
+  <testcase name="getString_environmentVariable()" classname="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" time="0.002"/>
+  <testcase name="getInt_systemProperty()" classname="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" time="0.002"/>
+  <testcase name="getInt_environmentVariable()" classname="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" time="0.002"/>
+  <testcase name="getBoolean_systemProperty()" classname="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" time="0.002"/>
+  <testcase name="getString_none()" classname="io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtilTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

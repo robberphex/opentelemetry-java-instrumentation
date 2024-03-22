@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpRouteState.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.internal</a> &gt; <span class="el_source">HttpRouteState.java</span></div><h1>HttpRouteState.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.internal;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.ContextKey;
+import io.opentelemetry.context.ImplicitContextKeyed;
+import javax.annotation.Nullable;
+
+/**
+ * This class is internal and is hence not for public use. Its APIs are unstable and can change at
+ * any time.
+ */
+public final class HttpRouteState implements ImplicitContextKeyed {
+
+<span class="fc" id="L20">  private static final ContextKey&lt;HttpRouteState&gt; KEY =</span>
+<span class="fc" id="L21">      ContextKey.named(&quot;opentelemetry-http-server-route-key&quot;);</span>
+
+  @Nullable
+  public static HttpRouteState fromContextOrNull(Context context) {
+<span class="fc" id="L25">    return context.get(KEY);</span>
+  }
+
+  public static void updateSpan(Context context, Span span) {
+<span class="fc" id="L29">    HttpRouteState state = fromContextOrNull(context);</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">    if (state != null) {</span>
+<span class="fc" id="L31">      state.span = span;</span>
+    }
+<span class="fc" id="L33">  }</span>
+
+  // this method is used reflectively from InstrumentationApiContextBridging
+  public static HttpRouteState create(
+      @Nullable String method, @Nullable String route, int updatedBySourceOrder) {
+<span class="fc" id="L38">    return create(method, route, updatedBySourceOrder, null);</span>
+  }
+
+  // this method is used reflectively from InstrumentationApiContextBridging
+  public static HttpRouteState create(
+      @Nullable String method, @Nullable String route, int updatedBySourceOrder, Span span) {
+<span class="fc" id="L44">    return new HttpRouteState(method, route, updatedBySourceOrder, span);</span>
+  }
+
+  @Nullable private final String method;
+  @Nullable private volatile String route;
+  private volatile int updatedBySourceOrder;
+  @Nullable private volatile Span span;
+
+  private HttpRouteState(
+<span class="fc" id="L53">      @Nullable String method, @Nullable String route, int updatedBySourceOrder, Span span) {</span>
+<span class="fc" id="L54">    this.method = method;</span>
+<span class="fc" id="L55">    this.updatedBySourceOrder = updatedBySourceOrder;</span>
+<span class="fc" id="L56">    this.route = route;</span>
+<span class="fc" id="L57">    this.span = span;</span>
+<span class="fc" id="L58">  }</span>
+
+  @Override
+  public Context storeInContext(Context context) {
+<span class="fc" id="L62">    return context.with(KEY, this);</span>
+  }
+
+  @Nullable
+  public String getMethod() {
+<span class="fc" id="L67">    return method;</span>
+  }
+
+  public int getUpdatedBySourceOrder() {
+<span class="fc" id="L71">    return updatedBySourceOrder;</span>
+  }
+
+  @Nullable
+  public String getRoute() {
+<span class="fc" id="L76">    return route;</span>
+  }
+
+  @Nullable
+  public Span getSpan() {
+<span class="fc" id="L81">    return span;</span>
+  }
+
+  public void update(
+      @SuppressWarnings(&quot;unused&quot;)
+          Context context, // context is used by the javaagent bridge instrumentation
+      int updatedBySourceOrder,
+      String route) {
+<span class="fc" id="L89">    this.updatedBySourceOrder = updatedBySourceOrder;</span>
+<span class="fc" id="L90">    this.route = route;</span>
+<span class="fc" id="L91">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

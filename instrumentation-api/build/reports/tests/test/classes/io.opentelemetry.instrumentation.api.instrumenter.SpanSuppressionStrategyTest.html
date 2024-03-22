@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - SpanSuppressionStrategyTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>SpanSuppressionStrategyTest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/io.opentelemetry.instrumentation.api.instrumenter.html">io.opentelemetry.instrumentation.api.instrumenter</a> &gt; SpanSuppressionStrategyTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">31</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">0.036s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success" id="successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Tests</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Method name</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="success">context_shouldNotSuppressWhenKeyIsNotAvailable()</td>
+<td class="success">context_shouldNotSuppressWhenKeyIsNotAvailable()</td>
+<td class="success">0s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">context_shouldSuppressWhenKeyIsAvailableAndTrue()</td>
+<td class="success">context_shouldSuppressWhenKeyIsAvailableAndTrue()</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[1] INTERNAL</td>
+<td class="success">none_shouldNotStoreSpansInContext(SpanKind)[1]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[2] SERVER</td>
+<td class="success">none_shouldNotStoreSpansInContext(SpanKind)[2]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[3] CLIENT</td>
+<td class="success">none_shouldNotStoreSpansInContext(SpanKind)[3]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[4] PRODUCER</td>
+<td class="success">none_shouldNotStoreSpansInContext(SpanKind)[4]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[5] CONSUMER</td>
+<td class="success">none_shouldNotStoreSpansInContext(SpanKind)[5]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[1] SERVER, opentelemetry-traces-span-key-kind-server</td>
+<td class="success">none_shouldNotSuppressAnything(SpanKind, SpanKey)[1]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[2] CLIENT, opentelemetry-traces-span-key-kind-client</td>
+<td class="success">none_shouldNotSuppressAnything(SpanKind, SpanKey)[2]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[3] CONSUMER, opentelemetry-traces-span-key-kind-consumer</td>
+<td class="success">none_shouldNotSuppressAnything(SpanKind, SpanKey)[3]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[4] PRODUCER, opentelemetry-traces-span-key-kind-producer</td>
+<td class="success">none_shouldNotSuppressAnything(SpanKind, SpanKey)[4]</td>
+<td class="success">0s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">semconv_shouldNotSuppressAnythingWhenThereAreNoSpanKeys()</td>
+<td class="success">semconv_shouldNotSuppressAnythingWhenThereAreNoSpanKeys()</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">semconv_shouldNotSuppressContextWithPartiallyDifferentSpanKeys()</td>
+<td class="success">semconv_shouldNotSuppressContextWithPartiallyDifferentSpanKeys()</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">semconv_shouldStoreProvidedSpanKeysInContext()</td>
+<td class="success">semconv_shouldStoreProvidedSpanKeysInContext()</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">semconv_shouldSuppressContextWhenAllSpanKeysArePresent()</td>
+<td class="success">semconv_shouldSuppressContextWhenAllSpanKeysArePresent()</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[1] none, NONE</td>
+<td class="success">shouldParseConfig(String, SpanSuppressionStrategy)[1]</td>
+<td class="success">0.007s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[2] NONE, NONE</td>
+<td class="success">shouldParseConfig(String, SpanSuppressionStrategy)[2]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[3] span-kind, SPAN_KIND</td>
+<td class="success">shouldParseConfig(String, SpanSuppressionStrategy)[3]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[4] Span-Kind, SPAN_KIND</td>
+<td class="success">shouldParseConfig(String, SpanSuppressionStrategy)[4]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[5] semconv, SEMCONV</td>
+<td class="success">shouldParseConfig(String, SpanSuppressionStrategy)[5]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[6] SemConv, SEMCONV</td>
+<td class="success">shouldParseConfig(String, SpanSuppressionStrategy)[6]</td>
+<td class="success">0s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[7] asdfasdfasdf, SEMCONV</td>
+<td class="success">shouldParseConfig(String, SpanSuppressionStrategy)[7]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[8] null, SEMCONV</td>
+<td class="success">shouldParseConfig(String, SpanSuppressionStrategy)[8]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[1] SERVER, opentelemetry-traces-span-key-kind-server</td>
+<td class="success">spanKind_shouldStoreInContext(SpanKind, SpanKey)[1]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[2] CLIENT, opentelemetry-traces-span-key-kind-client</td>
+<td class="success">spanKind_shouldStoreInContext(SpanKind, SpanKey)[2]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[3] CONSUMER, opentelemetry-traces-span-key-kind-consumer</td>
+<td class="success">spanKind_shouldStoreInContext(SpanKind, SpanKey)[3]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[4] PRODUCER, opentelemetry-traces-span-key-kind-producer</td>
+<td class="success">spanKind_shouldStoreInContext(SpanKind, SpanKey)[4]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[1] SERVER, opentelemetry-traces-span-key-kind-server</td>
+<td class="success">spanKind_shouldSuppressSameKind(SpanKind, SpanKey)[1]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[2] CLIENT, opentelemetry-traces-span-key-kind-client</td>
+<td class="success">spanKind_shouldSuppressSameKind(SpanKind, SpanKey)[2]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[3] CONSUMER, opentelemetry-traces-span-key-kind-consumer</td>
+<td class="success">spanKind_shouldSuppressSameKind(SpanKind, SpanKey)[3]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">[4] PRODUCER, opentelemetry-traces-span-key-kind-producer</td>
+<td class="success">spanKind_shouldSuppressSameKind(SpanKind, SpanKey)[4]</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="http://www.gradle.org">Gradle 8.6</a> at 2024年3月22日 下午8:44:21</p>
+</div>
+</div>
+</body>
+</html>

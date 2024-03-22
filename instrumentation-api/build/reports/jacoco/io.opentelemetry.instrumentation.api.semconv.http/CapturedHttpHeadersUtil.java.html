@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CapturedHttpHeadersUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.http</a> &gt; <span class="el_source">CapturedHttpHeadersUtil.java</span></div><h1>CapturedHttpHeadersUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.http;
+
+import static java.util.Collections.unmodifiableList;
+
+import io.opentelemetry.api.common.AttributeKey;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
+
+final class CapturedHttpHeadersUtil {
+
+  // these are naturally bounded because they only store keys listed in
+  // otel.instrumentation.http.server.capture-request-headers and
+  // otel.instrumentation.http.server.capture-response-headers
+<span class="fc" id="L22">  private static final ConcurrentMap&lt;String, AttributeKey&lt;List&lt;String&gt;&gt;&gt; requestKeysCache =</span>
+      new ConcurrentHashMap&lt;&gt;();
+<span class="fc" id="L24">  private static final ConcurrentMap&lt;String, AttributeKey&lt;List&lt;String&gt;&gt;&gt; responseKeysCache =</span>
+      new ConcurrentHashMap&lt;&gt;();
+
+  static List&lt;String&gt; lowercase(List&lt;String&gt; names) {
+<span class="fc" id="L28">    return unmodifiableList(</span>
+<span class="fc" id="L29">        names.stream().map(s -&gt; s.toLowerCase(Locale.ROOT)).collect(Collectors.toList()));</span>
+  }
+
+  static AttributeKey&lt;List&lt;String&gt;&gt; requestAttributeKey(String headerName) {
+<span class="fc" id="L33">    return requestKeysCache.computeIfAbsent(headerName, n -&gt; createKey(&quot;request&quot;, n));</span>
+  }
+
+  static AttributeKey&lt;List&lt;String&gt;&gt; responseAttributeKey(String headerName) {
+<span class="fc" id="L37">    return responseKeysCache.computeIfAbsent(headerName, n -&gt; createKey(&quot;response&quot;, n));</span>
+  }
+
+  private static AttributeKey&lt;List&lt;String&gt;&gt; createKey(String type, String headerName) {
+    // headerName is always lowercase, see CapturedHttpHeadersUtil#lowercase
+<span class="fc" id="L42">    String key = &quot;http.&quot; + type + &quot;.header.&quot; + headerName;</span>
+<span class="fc" id="L43">    return AttributeKey.stringArrayKey(key);</span>
+  }
+
+  private CapturedHttpHeadersUtil() {}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

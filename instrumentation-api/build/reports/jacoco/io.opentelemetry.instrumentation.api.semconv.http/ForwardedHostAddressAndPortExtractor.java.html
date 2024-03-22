@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ForwardedHostAddressAndPortExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.http</a> &gt; <span class="el_source">ForwardedHostAddressAndPortExtractor.java</span></div><h1>ForwardedHostAddressAndPortExtractor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.http;
+
+import static io.opentelemetry.instrumentation.api.semconv.http.HeaderParsingHelper.notFound;
+import static io.opentelemetry.instrumentation.api.semconv.http.HeaderParsingHelper.setPort;
+
+import io.opentelemetry.instrumentation.api.semconv.network.internal.AddressAndPortExtractor;
+import java.util.Locale;
+
+final class ForwardedHostAddressAndPortExtractor&lt;REQUEST&gt;
+    implements AddressAndPortExtractor&lt;REQUEST&gt; {
+
+  private final HttpCommonAttributesGetter&lt;REQUEST, ?&gt; getter;
+
+<span class="fc" id="L19">  ForwardedHostAddressAndPortExtractor(HttpCommonAttributesGetter&lt;REQUEST, ?&gt; getter) {</span>
+<span class="fc" id="L20">    this.getter = getter;</span>
+<span class="fc" id="L21">  }</span>
+
+  @Override
+  public void extract(AddressPortSink sink, REQUEST request) {
+    // try Forwarded
+<span class="fc bfc" id="L26" title="All 2 branches covered.">    for (String forwarded : getter.getHttpRequestHeader(request, &quot;forwarded&quot;)) {</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">      if (extractFromForwardedHeader(sink, forwarded)) {</span>
+<span class="fc" id="L28">        return;</span>
+      }
+<span class="fc" id="L30">    }</span>
+
+    // try X-Forwarded-Host
+<span class="fc bfc" id="L33" title="All 2 branches covered.">    for (String forwardedHost : getter.getHttpRequestHeader(request, &quot;x-forwarded-host&quot;)) {</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">      if (extractHost(sink, forwardedHost, 0, forwardedHost.length())) {</span>
+<span class="fc" id="L35">        return;</span>
+      }
+<span class="fc" id="L37">    }</span>
+
+    // try :authority (HTTP 2.0 pseudo-header)
+<span class="fc bfc" id="L40" title="All 2 branches covered.">    for (String host : getter.getHttpRequestHeader(request, &quot;:authority&quot;)) {</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">      if (extractHost(sink, host, 0, host.length())) {</span>
+<span class="fc" id="L42">        return;</span>
+      }
+<span class="fc" id="L44">    }</span>
+
+    // try Host
+<span class="fc bfc" id="L47" title="All 2 branches covered.">    for (String host : getter.getHttpRequestHeader(request, &quot;host&quot;)) {</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">      if (extractHost(sink, host, 0, host.length())) {</span>
+<span class="fc" id="L49">        return;</span>
+      }
+<span class="fc" id="L51">    }</span>
+<span class="fc" id="L52">  }</span>
+
+  private static boolean extractFromForwardedHeader(AddressPortSink sink, String forwarded) {
+<span class="fc" id="L55">    int start = forwarded.toLowerCase(Locale.ROOT).indexOf(&quot;host=&quot;);</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">    if (start &lt; 0) {</span>
+<span class="fc" id="L57">      return false;</span>
+    }
+<span class="fc" id="L59">    start += &quot;host=&quot;.length(); // start is now the index after host=</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">    if (start &gt;= forwarded.length() - 1) { // the value after host= must not be empty</span>
+<span class="fc" id="L61">      return false;</span>
+    }
+    // find the end of the `host=&lt;address&gt;` section
+<span class="fc" id="L64">    int end = forwarded.indexOf(';', start);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">    if (end &lt; 0) {</span>
+<span class="fc" id="L66">      end = forwarded.length();</span>
+    }
+<span class="fc" id="L68">    return extractHost(sink, forwarded, start, end);</span>
+  }
+
+  private static boolean extractHost(AddressPortSink sink, String host, int start, int end) {
+<span class="fc bfc" id="L72" title="All 2 branches covered.">    if (start &gt;= end) {</span>
+<span class="fc" id="L73">      return false;</span>
+    }
+
+    // skip quotes
+<span class="fc bfc" id="L77" title="All 2 branches covered.">    if (host.charAt(start) == '&quot;') {</span>
+      // try to find the end of the quote
+<span class="fc" id="L79">      int quoteEnd = host.indexOf('&quot;', start + 1);</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">      if (notFound(quoteEnd, end)) {</span>
+        // malformed header value
+<span class="fc" id="L82">        return false;</span>
+      }
+<span class="fc" id="L84">      return extractHost(sink, host, start + 1, quoteEnd);</span>
+    }
+
+<span class="fc" id="L87">    int hostHeaderSeparator = host.indexOf(':', start);</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">    if (notFound(hostHeaderSeparator, end)) {</span>
+<span class="fc" id="L89">      sink.setAddress(host.substring(start, end));</span>
+    } else {
+<span class="fc" id="L91">      sink.setAddress(host.substring(start, hostHeaderSeparator));</span>
+<span class="fc" id="L92">      setPort(sink, host, hostHeaderSeparator + 1, end);</span>
+    }
+
+<span class="fc" id="L95">    return true;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

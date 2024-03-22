@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.semconv.http.HttpClientMetricsTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:19" hostname="luyanbo-MBP.local" time="0.102">
+  <properties/>
+  <testcase name="collectsMetrics()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpClientMetricsTest" time="0.102"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

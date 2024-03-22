@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:20" hostname="luyanbo-MBP.local" time="0.04">
+  <properties/>
+  <testcase name="shouldUpdateRoute_betterMatch()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" time="0.008"/>
+  <testcase name="shouldNotUpdateRoute_worseMatch()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" time="0.003"/>
+  <testcase name="shouldNotUpdateRoute_sameSource()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" time="0.003"/>
+  <testcase name="shouldUseHttp_unknownMethod()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" time="0.005"/>
+  <testcase name="shouldUpdateRoute_higherOrderSource()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" time="0.002"/>
+  <testcase name="shouldUseHttp_noMethod()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" time="0.002"/>
+  <testcase name="nonServerRootSpan()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" time="0.003"/>
+  <testcase name="shouldSetRoute()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" time="0.003"/>
+  <testcase name="shouldNotUpdateRoute_lowerOrderSource()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" time="0.003"/>
+  <testcase name="noLocalRootSpan()" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

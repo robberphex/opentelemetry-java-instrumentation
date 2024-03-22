@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MapBackedCache.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.internal.cache</a> &gt; <span class="el_source">MapBackedCache.java</span></div><h1>MapBackedCache.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.internal.cache;
+
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import javax.annotation.Nullable;
+
+final class MapBackedCache&lt;K, V&gt; implements Cache&lt;K, V&gt; {
+
+  private final ConcurrentMap&lt;K, V&gt; delegate;
+
+<span class="fc" id="L16">  MapBackedCache(ConcurrentMap&lt;K, V&gt; delegate) {</span>
+<span class="fc" id="L17">    this.delegate = delegate;</span>
+<span class="fc" id="L18">  }</span>
+
+  @Override
+  public V computeIfAbsent(K key, Function&lt;? super K, ? extends V&gt; mappingFunction) {
+<span class="fc" id="L22">    return delegate.computeIfAbsent(key, mappingFunction);</span>
+  }
+
+  @Nullable
+  @Override
+  public V get(K key) {
+<span class="fc" id="L28">    return delegate.get(key);</span>
+  }
+
+  @Override
+  public void put(K key, V value) {
+<span class="fc" id="L33">    delegate.put(key, value);</span>
+<span class="fc" id="L34">  }</span>
+
+  @Override
+  public void remove(K key) {
+<span class="fc" id="L38">    delegate.remove(key);</span>
+<span class="fc" id="L39">  }</span>
+
+  // Visible for tests
+  int size() {
+<span class="fc" id="L43">    return delegate.size();</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

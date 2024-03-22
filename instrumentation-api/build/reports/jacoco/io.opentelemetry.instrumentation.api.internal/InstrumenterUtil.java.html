@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InstrumenterUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.internal</a> &gt; <span class="el_source">InstrumenterUtil.java</span></div><h1>InstrumenterUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.internal;
+
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.propagation.TextMapGetter;
+import io.opentelemetry.context.propagation.TextMapSetter;
+import io.opentelemetry.instrumentation.api.instrumenter.Instrumenter;
+import io.opentelemetry.instrumentation.api.instrumenter.InstrumenterBuilder;
+import io.opentelemetry.instrumentation.api.instrumenter.SpanKindExtractor;
+import java.time.Instant;
+import javax.annotation.Nullable;
+
+/**
+ * This class is internal and is hence not for public use. Its APIs are unstable and can change at
+ * any time.
+ */
+public final class InstrumenterUtil {
+
+  private static InstrumenterAccess instrumenterAccess;
+  private static InstrumenterBuilderAccess instrumenterBuilderAccess;
+
+  public static void setInstrumenterAccess(InstrumenterAccess instrumenterAccess) {
+<span class="fc" id="L27">    InstrumenterUtil.instrumenterAccess = instrumenterAccess;</span>
+<span class="fc" id="L28">  }</span>
+
+  public static void setInstrumenterBuilderAccess(
+      InstrumenterBuilderAccess instrumenterBuilderAccess) {
+<span class="fc" id="L32">    InstrumenterUtil.instrumenterBuilderAccess = instrumenterBuilderAccess;</span>
+<span class="fc" id="L33">  }</span>
+
+  public static &lt;REQUEST, RESPONSE&gt; Context startAndEnd(
+      Instrumenter&lt;REQUEST, RESPONSE&gt; instrumenter,
+      Context parentContext,
+      REQUEST request,
+      @Nullable RESPONSE response,
+      @Nullable Throwable error,
+      Instant startTime,
+      Instant endTime) {
+    // instrumenterAccess is guaranteed to be non-null here
+<span class="nc" id="L44">    return instrumenterAccess.startAndEnd(</span>
+        instrumenter, parentContext, request, response, error, startTime, endTime);
+  }
+
+  public static &lt;REQUEST, RESPONSE&gt; Context suppressSpan(
+      Instrumenter&lt;REQUEST, RESPONSE&gt; instrumenter, Context parentContext, REQUEST request) {
+<span class="nc" id="L50">    return instrumenterAccess.suppressSpan(instrumenter, parentContext, request);</span>
+  }
+
+  public static &lt;REQUEST, RESPONSE&gt; Instrumenter&lt;REQUEST, RESPONSE&gt; buildUpstreamInstrumenter(
+      InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; builder,
+      TextMapGetter&lt;REQUEST&gt; getter,
+      SpanKindExtractor&lt;REQUEST&gt; spanKindExtractor) {
+    // instrumenterBuilderAccess is guaranteed to be non-null here
+<span class="nc" id="L58">    return instrumenterBuilderAccess.buildUpstreamInstrumenter(builder, getter, spanKindExtractor);</span>
+  }
+
+  public static &lt;REQUEST, RESPONSE&gt; Instrumenter&lt;REQUEST, RESPONSE&gt; buildDownstreamInstrumenter(
+      InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; builder,
+      TextMapSetter&lt;REQUEST&gt; setter,
+      SpanKindExtractor&lt;REQUEST&gt; spanKindExtractor) {
+    // instrumenterBuilderAccess is guaranteed to be non-null here
+<span class="nc" id="L66">    return instrumenterBuilderAccess.buildDownstreamInstrumenter(</span>
+        builder, setter, spanKindExtractor);
+  }
+
+  private InstrumenterUtil() {}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

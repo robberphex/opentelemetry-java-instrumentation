@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InternalNetworkAttributesExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.network.internal</a> &gt; <span class="el_source">InternalNetworkAttributesExtractor.java</span></div><h1>InternalNetworkAttributesExtractor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.network.internal;
+
+import static io.opentelemetry.instrumentation.api.internal.AttributesExtractorUtil.internalSet;
+
+import io.opentelemetry.api.common.AttributesBuilder;
+import io.opentelemetry.instrumentation.api.semconv.network.NetworkAttributesGetter;
+import io.opentelemetry.semconv.SemanticAttributes;
+import java.util.Locale;
+import javax.annotation.Nullable;
+
+/**
+ * This class is internal and is hence not for public use. Its APIs are unstable and can change at
+ * any time.
+ */
+public final class InternalNetworkAttributesExtractor&lt;REQUEST, RESPONSE&gt; {
+
+  private final NetworkAttributesGetter&lt;REQUEST, RESPONSE&gt; getter;
+  private final boolean captureProtocolAttributes;
+  private final boolean captureLocalSocketAttributes;
+
+  public InternalNetworkAttributesExtractor(
+      NetworkAttributesGetter&lt;REQUEST, RESPONSE&gt; getter,
+      boolean captureProtocolAttributes,
+<span class="fc" id="L29">      boolean captureLocalSocketAttributes) {</span>
+<span class="fc" id="L30">    this.getter = getter;</span>
+<span class="fc" id="L31">    this.captureProtocolAttributes = captureProtocolAttributes;</span>
+<span class="fc" id="L32">    this.captureLocalSocketAttributes = captureLocalSocketAttributes;</span>
+<span class="fc" id="L33">  }</span>
+
+  public void onEnd(AttributesBuilder attributes, REQUEST request, @Nullable RESPONSE response) {
+<span class="fc" id="L36">    String protocolName = lowercase(getter.getNetworkProtocolName(request, response));</span>
+<span class="fc" id="L37">    String protocolVersion = lowercase(getter.getNetworkProtocolVersion(request, response));</span>
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">    if (captureProtocolAttributes) {</span>
+<span class="fc" id="L40">      String transport = lowercase(getter.getNetworkTransport(request, response));</span>
+<span class="fc" id="L41">      internalSet(attributes, SemanticAttributes.NETWORK_TRANSPORT, transport);</span>
+<span class="fc" id="L42">      internalSet(</span>
+          attributes,
+          SemanticAttributes.NETWORK_TYPE,
+<span class="fc" id="L45">          lowercase(getter.getNetworkType(request, response)));</span>
+<span class="fc" id="L46">      internalSet(attributes, SemanticAttributes.NETWORK_PROTOCOL_NAME, protocolName);</span>
+<span class="fc" id="L47">      internalSet(attributes, SemanticAttributes.NETWORK_PROTOCOL_VERSION, protocolVersion);</span>
+    }
+
+<span class="fc bfc" id="L50" title="All 2 branches covered.">    if (captureLocalSocketAttributes) {</span>
+<span class="fc" id="L51">      String localAddress = getter.getNetworkLocalAddress(request, response);</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">      if (localAddress != null) {</span>
+<span class="fc" id="L53">        internalSet(attributes, NetworkAttributes.NETWORK_LOCAL_ADDRESS, localAddress);</span>
+
+<span class="fc" id="L55">        Integer localPort = getter.getNetworkLocalPort(request, response);</span>
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">        if (localPort != null &amp;&amp; localPort &gt; 0) {</span>
+<span class="fc" id="L57">          internalSet(attributes, NetworkAttributes.NETWORK_LOCAL_PORT, (long) localPort);</span>
+        }
+      }
+    }
+
+<span class="fc" id="L62">    String peerAddress = getter.getNetworkPeerAddress(request, response);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">    if (peerAddress != null) {</span>
+<span class="fc" id="L64">      internalSet(attributes, NetworkAttributes.NETWORK_PEER_ADDRESS, peerAddress);</span>
+
+<span class="fc" id="L66">      Integer peerPort = getter.getNetworkPeerPort(request, response);</span>
+<span class="pc bpc" id="L67" title="1 of 4 branches missed.">      if (peerPort != null &amp;&amp; peerPort &gt; 0) {</span>
+<span class="fc" id="L68">        internalSet(attributes, NetworkAttributes.NETWORK_PEER_PORT, (long) peerPort);</span>
+      }
+    }
+<span class="fc" id="L71">  }</span>
+
+  @Nullable
+  private static String lowercase(@Nullable String str) {
+<span class="fc bfc" id="L75" title="All 2 branches covered.">    return str == null ? null : str.toLowerCase(Locale.ROOT);</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnsafeAttributes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.instrumenter</a> &gt; <span class="el_source">UnsafeAttributes.java</span></div><h1>UnsafeAttributes.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.instrumenter;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiConsumer;
+
+/**
+ * The {@link AttributesBuilder} and {@link Attributes} used by the instrumentation API. We are able
+ * to take advantage of the fact that we know our attributes builder cannot be reused to create
+ * multiple Attributes instances. So we use just one storage for both the builder and attributes. A
+ * couple of methods still require copying to satisfy the interface contracts, but in practice
+ * should never be called by user code even though they can.
+ */
+<span class="fc" id="L23">final class UnsafeAttributes extends HashMap&lt;AttributeKey&lt;?&gt;, Object&gt;</span>
+    implements Attributes, AttributesBuilder {
+
+  private static final long serialVersionUID = 1L;
+
+  // Attributes
+
+  @SuppressWarnings(&quot;unchecked&quot;)
+  @Override
+  public &lt;T&gt; T get(AttributeKey&lt;T&gt; key) {
+<span class="nc" id="L33">    return (T) super.get(key);</span>
+  }
+
+  @Override
+  public Map&lt;AttributeKey&lt;?&gt;, Object&gt; asMap() {
+<span class="fc" id="L38">    return this;</span>
+  }
+
+  // This can be called by user code in a RequestListener so copy. In practice, it should not be
+  // called as there is no real use case.
+  @Override
+  public AttributesBuilder toBuilder() {
+<span class="fc" id="L45">    return Attributes.builder().putAll(this);</span>
+  }
+
+  // AttributesBuilder
+
+  // This can be called by user code in an AttributesExtractor so copy. In practice, it should not
+  // be called as there is no real use case.
+  @Override
+  public Attributes build() {
+<span class="fc" id="L54">    return toBuilder().build();</span>
+  }
+
+  @Override
+  @CanIgnoreReturnValue
+  public &lt;T&gt; AttributesBuilder put(AttributeKey&lt;Long&gt; key, int value) {
+<span class="fc" id="L60">    return put(key, (long) value);</span>
+  }
+
+  @Override
+  @CanIgnoreReturnValue
+  public &lt;T&gt; AttributesBuilder put(AttributeKey&lt;T&gt; key, T value) {
+<span class="fc" id="L66">    super.put(key, value);</span>
+<span class="fc" id="L67">    return this;</span>
+  }
+
+  @Override
+  @CanIgnoreReturnValue
+  public AttributesBuilder putAll(Attributes attributes) {
+<span class="fc" id="L73">    attributes.forEach(this::put);</span>
+<span class="fc" id="L74">    return this;</span>
+  }
+
+  @Override
+  public void forEach(BiConsumer&lt;? super AttributeKey&lt;?&gt;, ? super Object&gt; action) {
+    // https://github.com/open-telemetry/opentelemetry-java/issues/4161
+    // Help out android desugaring by having an explicit call to HashMap.forEach, when forEach is
+    // just called through Attributes.forEach desugaring is unable to correctly handle it.
+<span class="fc" id="L82">    super.forEach(action);</span>
+<span class="fc" id="L83">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

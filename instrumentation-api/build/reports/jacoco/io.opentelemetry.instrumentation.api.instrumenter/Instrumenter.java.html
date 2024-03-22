@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Instrumenter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.instrumenter</a> &gt; <span class="el_source">Instrumenter.java</span></div><h1>Instrumenter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.instrumenter;
+
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.instrumentation.api.internal.HttpRouteState;
+import io.opentelemetry.instrumentation.api.internal.InstrumenterAccess;
+import io.opentelemetry.instrumentation.api.internal.InstrumenterUtil;
+import io.opentelemetry.instrumentation.api.internal.SupportabilityMetrics;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
+
+/**
+ * The {@link Instrumenter} encapsulates the entire logic for gathering telemetry, from collecting
+ * the data, to starting and ending spans, to recording values using metrics instruments.
+ *
+ * &lt;p&gt;An {@link Instrumenter} is called at the start and the end of a request/response lifecycle.
+ * When instrumenting a library, there will generally be four steps.
+ *
+ * &lt;ul&gt;
+ *   &lt;li&gt;Create an {@link Instrumenter} using {@link InstrumenterBuilder}. Use the builder to
+ *       configure any library-specific customizations, and also expose useful knobs to your user.
+ *   &lt;li&gt;Call {@link Instrumenter#shouldStart(Context, Object)} and do not proceed if it returns
+ *       {@code false}.
+ *   &lt;li&gt;Call {@link Instrumenter#start(Context, Object)} at the beginning of a request.
+ *   &lt;li&gt;Call {@link Instrumenter#end(Context, Object, Object, Throwable)} at the end of a request.
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;For more detailed information about using the {@link Instrumenter} see the &lt;a
+ * href=&quot;https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/contributing/using-instrumenter-api.md&quot;&gt;Using
+ * the Instrumenter API&lt;/a&gt; page.
+ */
+public class Instrumenter&lt;REQUEST, RESPONSE&gt; {
+
+  /**
+   * Returns a new {@link InstrumenterBuilder}.
+   *
+   * &lt;p&gt;The {@code instrumentationName} indicates the instrumentation library name, not the
+   * instrument&lt;b&gt;ed&lt;/b&gt; library name. The value passed in this parameter should uniquely identify
+   * the instrumentation library so that during troubleshooting it's possible to determine where the
+   * telemetry came from.
+   *
+   * &lt;p&gt;In OpenTelemetry instrumentations we use a convention to encode the minimum supported
+   * version of the instrument&lt;b&gt;ed&lt;/b&gt; library into the instrumentation name, for example {@code
+   * io.opentelemetry.apache-httpclient-4.0}. This way, if there are different instrumentations for
+   * different library versions it's easy to find out which instrumentations produced the telemetry
+   * data.
+   */
+  public static &lt;REQUEST, RESPONSE&gt; InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; builder(
+      OpenTelemetry openTelemetry,
+      String instrumentationName,
+      SpanNameExtractor&lt;? super REQUEST&gt; spanNameExtractor) {
+<span class="fc" id="L65">    return new InstrumenterBuilder&lt;&gt;(openTelemetry, instrumentationName, spanNameExtractor);</span>
+  }
+
+<span class="fc" id="L68">  private static final SupportabilityMetrics supportability = SupportabilityMetrics.instance();</span>
+
+  private final String instrumentationName;
+  private final Tracer tracer;
+  private final SpanNameExtractor&lt;? super REQUEST&gt; spanNameExtractor;
+  private final SpanKindExtractor&lt;? super REQUEST&gt; spanKindExtractor;
+  private final SpanStatusExtractor&lt;? super REQUEST, ? super RESPONSE&gt; spanStatusExtractor;
+  private final List&lt;? extends SpanLinksExtractor&lt;? super REQUEST&gt;&gt; spanLinksExtractors;
+  private final List&lt;? extends AttributesExtractor&lt;? super REQUEST, ? super RESPONSE&gt;&gt;
+      attributesExtractors;
+  private final List&lt;? extends ContextCustomizer&lt;? super REQUEST&gt;&gt; contextCustomizers;
+  private final List&lt;? extends OperationListener&gt; operationListeners;
+  private final ErrorCauseExtractor errorCauseExtractor;
+  private final boolean enabled;
+  private final SpanSuppressor spanSuppressor;
+
+<span class="fc" id="L84">  Instrumenter(InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; builder) {</span>
+<span class="fc" id="L85">    this.instrumentationName = builder.instrumentationName;</span>
+<span class="fc" id="L86">    this.tracer = builder.buildTracer();</span>
+<span class="fc" id="L87">    this.spanNameExtractor = builder.spanNameExtractor;</span>
+<span class="fc" id="L88">    this.spanKindExtractor = builder.spanKindExtractor;</span>
+<span class="fc" id="L89">    this.spanStatusExtractor = builder.spanStatusExtractor;</span>
+<span class="fc" id="L90">    this.spanLinksExtractors = new ArrayList&lt;&gt;(builder.spanLinksExtractors);</span>
+<span class="fc" id="L91">    this.attributesExtractors = new ArrayList&lt;&gt;(builder.attributesExtractors);</span>
+<span class="fc" id="L92">    this.contextCustomizers = new ArrayList&lt;&gt;(builder.contextCustomizers);</span>
+<span class="fc" id="L93">    this.operationListeners = builder.buildOperationListeners();</span>
+<span class="fc" id="L94">    this.errorCauseExtractor = builder.errorCauseExtractor;</span>
+<span class="fc" id="L95">    this.enabled = builder.enabled;</span>
+<span class="fc" id="L96">    this.spanSuppressor = builder.buildSpanSuppressor();</span>
+<span class="fc" id="L97">  }</span>
+
+  /**
+   * Determines whether the operation should be instrumented for telemetry or not. If the return
+   * value is {@code true}, call {@link #start(Context, Object)} and {@link #end(Context, Object,
+   * Object, Throwable)} around the instrumented operation; if the return value is false {@code
+   * false} execute the operation directly without calling those methods.
+   *
+   * &lt;p&gt;The {@code parentContext} is the parent of the resulting instrumented operation and should
+   * usually be {@link Context#current() Context.current()}. The {@code request} is the request
+   * object of this operation.
+   */
+  public boolean shouldStart(Context parentContext, REQUEST request) {
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">    if (!enabled) {</span>
+<span class="fc" id="L111">      return false;</span>
+    }
+<span class="nc" id="L113">    SpanKind spanKind = spanKindExtractor.extract(request);</span>
+<span class="nc" id="L114">    boolean suppressed = spanSuppressor.shouldSuppress(parentContext, spanKind);</span>
+
+<span class="nc bnc" id="L116" title="All 2 branches missed.">    if (suppressed) {</span>
+<span class="nc" id="L117">      supportability.recordSuppressedSpan(spanKind, instrumentationName);</span>
+    }
+<span class="nc bnc" id="L119" title="All 2 branches missed.">    return !suppressed;</span>
+  }
+
+  /**
+   * Starts a new instrumented operation. The returned {@link Context} should be propagated along
+   * with the operation and passed to the {@link #end(Context, Object, Object, Throwable)} method
+   * when it is finished.
+   *
+   * &lt;p&gt;The {@code parentContext} is the parent of the resulting instrumented operation and should
+   * usually be {@link Context#current() Context.current()}. The {@code request} is the request
+   * object of this operation.
+   */
+  public Context start(Context parentContext, REQUEST request) {
+<span class="fc" id="L132">    return doStart(parentContext, request, null);</span>
+  }
+
+  /**
+   * Ends an instrumented operation. It is of extreme importance for this method to be always called
+   * after {@link #start(Context, Object) start()}. Calling {@code start()} without later {@code
+   * end()} will result in inaccurate or wrong telemetry and context leaks.
+   *
+   * &lt;p&gt;The {@code context} must be the same value that was returned from {@link #start(Context,
+   * Object)}. The {@code request} parameter is the request object of the operation, {@code
+   * response} is the response object of the operation, and {@code error} is an exception that was
+   * thrown by the operation or {@code null} if no error occurred.
+   */
+  public void end(
+      Context context, REQUEST request, @Nullable RESPONSE response, @Nullable Throwable error) {
+<span class="fc" id="L147">    doEnd(context, request, response, error, null);</span>
+<span class="fc" id="L148">  }</span>
+
+  /** Internal method for creating spans with given start/end timestamps. */
+  Context startAndEnd(
+      Context parentContext,
+      REQUEST request,
+      @Nullable RESPONSE response,
+      @Nullable Throwable error,
+      Instant startTime,
+      Instant endTime) {
+<span class="nc" id="L158">    Context context = doStart(parentContext, request, startTime);</span>
+<span class="nc" id="L159">    doEnd(context, request, response, error, endTime);</span>
+<span class="nc" id="L160">    return context;</span>
+  }
+
+  private Context doStart(Context parentContext, REQUEST request, @Nullable Instant startTime) {
+<span class="fc" id="L164">    SpanKind spanKind = spanKindExtractor.extract(request);</span>
+<span class="fc" id="L165">    SpanBuilder spanBuilder =</span>
+<span class="fc" id="L166">        tracer.spanBuilder(spanNameExtractor.extract(request)).setSpanKind(spanKind);</span>
+
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">    if (startTime != null) {</span>
+<span class="nc" id="L169">      spanBuilder.setStartTimestamp(startTime);</span>
+    }
+
+<span class="fc" id="L172">    SpanLinksBuilder spanLinksBuilder = new SpanLinksBuilderImpl(spanBuilder);</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">    for (SpanLinksExtractor&lt;? super REQUEST&gt; spanLinksExtractor : spanLinksExtractors) {</span>
+<span class="fc" id="L174">      spanLinksExtractor.extract(spanLinksBuilder, parentContext, request);</span>
+<span class="fc" id="L175">    }</span>
+
+<span class="fc" id="L177">    UnsafeAttributes attributes = new UnsafeAttributes();</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">    for (AttributesExtractor&lt;? super REQUEST, ? super RESPONSE&gt; extractor : attributesExtractors) {</span>
+<span class="fc" id="L179">      extractor.onStart(attributes, parentContext, request);</span>
+<span class="fc" id="L180">    }</span>
+
+<span class="fc" id="L182">    Context context = parentContext;</span>
+
+    // context customizers run before span start, so that they can have access to the parent span
+    // context, and so that their additions to the context will be visible to span processors
+<span class="fc bfc" id="L186" title="All 2 branches covered.">    for (ContextCustomizer&lt;? super REQUEST&gt; contextCustomizer : contextCustomizers) {</span>
+<span class="fc" id="L187">      context = contextCustomizer.onStart(context, request, attributes);</span>
+<span class="fc" id="L188">    }</span>
+
+<span class="fc" id="L190">    boolean localRoot = LocalRootSpan.isLocalRoot(context);</span>
+
+<span class="fc" id="L192">    spanBuilder.setAllAttributes(attributes);</span>
+<span class="fc" id="L193">    Span span = spanBuilder.setParent(context).startSpan();</span>
+<span class="fc" id="L194">    context = context.with(span);</span>
+
+<span class="fc bfc" id="L196" title="All 2 branches covered.">    if (!operationListeners.isEmpty()) {</span>
+      // operation listeners run after span start, so that they have access to the current span
+      // for capturing exemplars
+<span class="fc" id="L199">      long startNanos = getNanos(startTime);</span>
+<span class="fc bfc" id="L200" title="All 2 branches covered.">      for (OperationListener operationListener : operationListeners) {</span>
+<span class="fc" id="L201">        context = operationListener.onStart(context, attributes, startNanos);</span>
+<span class="fc" id="L202">      }</span>
+    }
+
+<span class="fc bfc" id="L205" title="All 2 branches covered.">    if (localRoot) {</span>
+<span class="fc" id="L206">      context = LocalRootSpan.store(context, span);</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">      if (spanKind == SpanKind.SERVER) {</span>
+<span class="fc" id="L208">        HttpRouteState.updateSpan(context, span);</span>
+      }
+    }
+
+<span class="fc" id="L212">    return spanSuppressor.storeInContext(context, spanKind, span);</span>
+  }
+
+  private void doEnd(
+      Context context,
+      REQUEST request,
+      @Nullable RESPONSE response,
+      @Nullable Throwable error,
+      @Nullable Instant endTime) {
+<span class="fc" id="L221">    Span span = Span.fromContext(context);</span>
+
+<span class="fc bfc" id="L223" title="All 2 branches covered.">    if (error != null) {</span>
+<span class="fc" id="L224">      error = errorCauseExtractor.extract(error);</span>
+<span class="fc" id="L225">      span.recordException(error);</span>
+    }
+
+<span class="fc" id="L228">    UnsafeAttributes attributes = new UnsafeAttributes();</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">    for (AttributesExtractor&lt;? super REQUEST, ? super RESPONSE&gt; extractor : attributesExtractors) {</span>
+<span class="fc" id="L230">      extractor.onEnd(attributes, context, request, response, error);</span>
+<span class="fc" id="L231">    }</span>
+<span class="fc" id="L232">    span.setAllAttributes(attributes);</span>
+
+<span class="fc bfc" id="L234" title="All 2 branches covered.">    if (!operationListeners.isEmpty()) {</span>
+<span class="fc" id="L235">      long endNanos = getNanos(endTime);</span>
+<span class="fc" id="L236">      ListIterator&lt;? extends OperationListener&gt; i =</span>
+<span class="fc" id="L237">          operationListeners.listIterator(operationListeners.size());</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">      while (i.hasPrevious()) {</span>
+<span class="fc" id="L239">        i.previous().onEnd(context, attributes, endNanos);</span>
+      }
+    }
+
+<span class="fc" id="L243">    SpanStatusBuilder spanStatusBuilder = new SpanStatusBuilderImpl(span);</span>
+<span class="fc" id="L244">    spanStatusExtractor.extract(spanStatusBuilder, request, response, error);</span>
+
+<span class="pc bpc" id="L246" title="1 of 2 branches missed.">    if (endTime != null) {</span>
+<span class="nc" id="L247">      span.end(endTime);</span>
+    } else {
+<span class="fc" id="L249">      span.end();</span>
+    }
+<span class="fc" id="L251">  }</span>
+
+  private static long getNanos(@Nullable Instant time) {
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">    if (time == null) {</span>
+<span class="fc" id="L255">      return System.nanoTime();</span>
+    }
+<span class="nc" id="L257">    return TimeUnit.SECONDS.toNanos(time.getEpochSecond()) + time.getNano();</span>
+  }
+
+  static {
+<span class="fc" id="L261">    InstrumenterUtil.setInstrumenterAccess(</span>
+<span class="fc" id="L262">        new InstrumenterAccess() {</span>
+          @Override
+          public &lt;RQ, RS&gt; Context startAndEnd(
+              Instrumenter&lt;RQ, RS&gt; instrumenter,
+              Context parentContext,
+              RQ request,
+              @Nullable RS response,
+              @Nullable Throwable error,
+              Instant startTime,
+              Instant endTime) {
+<span class="nc" id="L272">            return instrumenter.startAndEnd(</span>
+                parentContext, request, response, error, startTime, endTime);
+          }
+
+          @Override
+          public &lt;REQUEST, RESPONSE&gt; Context suppressSpan(
+              Instrumenter&lt;REQUEST, RESPONSE&gt; instrumenter,
+              Context parentContext,
+              REQUEST request) {
+<span class="nc" id="L281">            SpanKind spanKind = instrumenter.spanKindExtractor.extract(request);</span>
+
+<span class="nc" id="L283">            return instrumenter.spanSuppressor.storeInContext(</span>
+<span class="nc" id="L284">                parentContext, spanKind, Span.getInvalid());</span>
+          }
+        });
+<span class="fc" id="L287">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

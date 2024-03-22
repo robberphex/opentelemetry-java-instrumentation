@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpCommonAttributesGetter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.semconv.http</a> &gt; <span class="el_source">HttpCommonAttributesGetter.java</span></div><h1>HttpCommonAttributesGetter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.semconv.http;
+
+import io.opentelemetry.context.Context;
+import io.opentelemetry.instrumentation.api.instrumenter.Instrumenter;
+import io.opentelemetry.instrumentation.api.internal.HttpConstants;
+import java.util.List;
+import javax.annotation.Nullable;
+
+/**
+ * An interface for getting HTTP attributes common to clients and servers.
+ *
+ * @since 2.0.0
+ */
+public interface HttpCommonAttributesGetter&lt;REQUEST, RESPONSE&gt; {
+
+  /**
+   * Returns the HTTP request method.
+   *
+   * &lt;p&gt;Examples: {@code GET}, {@code POST}, {@code HEAD}
+   */
+  @Nullable
+  String getHttpRequestMethod(REQUEST request);
+
+  /**
+   * Returns all values of header named {@code name} from the request, or an empty list if there
+   * were none.
+   *
+   * &lt;p&gt;Implementations of this method &lt;b&gt;must not&lt;/b&gt; return a null value; an empty list should be
+   * returned instead.
+   */
+  List&lt;String&gt; getHttpRequestHeader(REQUEST request, String name);
+
+  /**
+   * Returns the &lt;a href=&quot;https://tools.ietf.org/html/rfc7231#section-6&quot;&gt;HTTP response status
+   * code&lt;/a&gt;.
+   *
+   * &lt;p&gt;Examples: {@code 200}
+   *
+   * &lt;p&gt;This is called from {@link Instrumenter#end(Context, Object, Object, Throwable)}, only when
+   * {@code response} is non-{@code null}.
+   */
+  @Nullable
+  Integer getHttpResponseStatusCode(REQUEST request, RESPONSE response, @Nullable Throwable error);
+
+  /**
+   * Returns all values of header named {@code name} from the response, or an empty list if there
+   * were none.
+   *
+   * &lt;p&gt;This is called from {@link Instrumenter#end(Context, Object, Object, Throwable)}, only when
+   * {@code response} is non-{@code null}.
+   *
+   * &lt;p&gt;Implementations of this method &lt;b&gt;must not&lt;/b&gt; return a null value; an empty list should be
+   * returned instead.
+   */
+  List&lt;String&gt; getHttpResponseHeader(REQUEST request, RESPONSE response, String name);
+
+  /**
+   * Returns a description of a class of error the operation ended with.
+   *
+   * &lt;p&gt;This method is only called if the request failed before response status code was sent or
+   * received.
+   *
+   * &lt;p&gt;If this method is not implemented, or if it returns {@code null}, the exception class name
+   * (if any was caught) or the value {@value HttpConstants#_OTHER} will be used as error type.
+   *
+   * &lt;p&gt;The cardinality of the error type should be low. The instrumentations implementing this
+   * method are recommended to document the custom values they support.
+   *
+   * &lt;p&gt;Examples: {@code timeout}, {@code java.net.UnknownHostException}, {@code
+   * server_certificate_invalid}, {@code 500}, {@code _OTHER}.
+   */
+  @Nullable
+  default String getErrorType(
+      REQUEST request, @Nullable RESPONSE response, @Nullable Throwable error) {
+<span class="nc" id="L80">    return null;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

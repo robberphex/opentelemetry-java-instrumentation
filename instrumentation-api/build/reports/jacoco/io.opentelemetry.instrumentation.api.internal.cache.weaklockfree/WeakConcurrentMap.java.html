@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WeakConcurrentMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.internal.cache.weaklockfree</a> &gt; <span class="el_source">WeakConcurrentMap.java</span></div><h1>WeakConcurrentMap.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+// Includes work from:
+/*
+ * Copyright Rafael Winterhalter
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Suppress warnings since this is vendored as-is.
+// CHECKSTYLE:OFF
+
+package io.opentelemetry.instrumentation.api.internal.cache.weaklockfree;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import javax.annotation.Nullable;
+
+/**
+ * A thread-safe map with weak keys. Entries are based on a key's system hash code and keys are
+ * considered equal only by reference equality. This class does not implement the {@link
+ * java.util.Map} interface because this implementation is incompatible with the map contract. While
+ * iterating over a map's entries, any key that has not passed iteration is referenced non-weakly.
+ *
+ * &lt;p&gt;This class has been copied as is from
+ * https://github.com/raphw/weak-lock-free/blob/ad0e5e0c04d4a31f9485bf12b89afbc9d75473b3/src/main/java/com/blogspot/mydailyjava/weaklockfree/WeakConcurrentMap.java
+ *
+ * &lt;p&gt;This class is internal and is hence not for public use. Its APIs are unstable and can change
+ * at any time.
+ */
+// Suppress warnings since this is copied as-is.
+@SuppressWarnings({
+  &quot;HashCodeToString&quot;,
+  &quot;MissingSummary&quot;,
+  &quot;UngroupedOverloads&quot;,
+  &quot;FieldMissingNullable&quot;
+})
+public class WeakConcurrentMap&lt;K, V&gt;
+    extends AbstractWeakConcurrentMap&lt;K, V, WeakConcurrentMap.LookupKey&lt;K&gt;&gt; {
+
+  /**
+   * Lookup keys are cached thread-locally to avoid allocations on lookups. This is beneficial as
+   * the JIT unfortunately can't reliably replace the {@link LookupKey} allocation with stack
+   * allocations, even though the {@link LookupKey} does not escape.
+   */
+<span class="fc" id="L62">  private static final ThreadLocal&lt;LookupKey&lt;?&gt;&gt; LOOKUP_KEY_CACHE =</span>
+<span class="fc" id="L63">      new ThreadLocal&lt;LookupKey&lt;?&gt;&gt;() {</span>
+        @Override
+        protected LookupKey&lt;?&gt; initialValue() {
+<span class="fc" id="L66">          return new LookupKey&lt;&gt;();</span>
+        }
+      };
+
+  private final boolean reuseKeys;
+
+  public WeakConcurrentMap() {
+<span class="fc" id="L73">    this(isPersistentClassLoader(LookupKey.class.getClassLoader()));</span>
+<span class="fc" id="L74">  }</span>
+
+  /**
+   * Checks whether the provided {@link ClassLoader} may be unloaded like a web application class
+   * loader, for example.
+   *
+   * &lt;p&gt;If the class loader can't be unloaded, it is safe to use {@link ThreadLocal}s and to reuse
+   * the {@link LookupKey}. Otherwise, the use of {@link ThreadLocal}s may lead to class loader
+   * leaks as it prevents the class loader this class is loaded by to unload.
+   *
+   * @param classLoader The class loader to check.
+   * @return {@code true} if the provided class loader can be unloaded.
+   */
+  private static boolean isPersistentClassLoader(ClassLoader classLoader) {
+    try {
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">      return classLoader == null // bootstrap class loader</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">          || classLoader == ClassLoader.getSystemClassLoader()</span>
+          || classLoader
+<span class="pc bnc" id="L92" title="All 2 branches missed.">              == ClassLoader.getSystemClassLoader().getParent(); // ext/platform class loader;</span>
+<span class="nc" id="L93">    } catch (Throwable ignored) {</span>
+<span class="nc" id="L94">      return false;</span>
+    }
+  }
+
+  /**
+   * @param reuseKeys {@code true} if the lookup keys should be reused via a {@link ThreadLocal}.
+   *     Note that setting this to {@code true} may result in class loader leaks. See {@link
+   *     #isPersistentClassLoader(ClassLoader)} for more details.
+   */
+  public WeakConcurrentMap(boolean reuseKeys) {
+<span class="fc" id="L104">    this(reuseKeys, new ConcurrentHashMap&lt;&gt;());</span>
+<span class="fc" id="L105">  }</span>
+
+  /**
+   * @param reuseKeys {@code true} if the lookup keys should be reused via a {@link ThreadLocal}.
+   *     Note that setting this to {@code true} may result in class loader leaks. See {@link
+   *     #isPersistentClassLoader(ClassLoader)} for more details.
+   * @param target ConcurrentMap implementation that this class wraps.
+   */
+  public WeakConcurrentMap(
+      boolean reuseKeys, ConcurrentMap&lt;AbstractWeakConcurrentMap.WeakKey&lt;K&gt;, V&gt; target) {
+<span class="fc" id="L115">    super(target);</span>
+<span class="fc" id="L116">    this.reuseKeys = reuseKeys;</span>
+<span class="fc" id="L117">  }</span>
+
+  @Override
+  @SuppressWarnings(&quot;unchecked&quot;)
+  protected LookupKey&lt;K&gt; getLookupKey(K key) {
+    LookupKey&lt;K&gt; lookupKey;
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">    if (reuseKeys) {</span>
+<span class="fc" id="L124">      lookupKey = (LookupKey&lt;K&gt;) LOOKUP_KEY_CACHE.get();</span>
+    } else {
+<span class="nc" id="L126">      lookupKey = new LookupKey&lt;&gt;();</span>
+    }
+<span class="fc" id="L128">    return lookupKey.withValue(key);</span>
+  }
+
+  @Override
+  protected void resetLookupKey(LookupKey&lt;K&gt; lookupKey) {
+<span class="fc" id="L133">    lookupKey.reset();</span>
+<span class="fc" id="L134">  }</span>
+
+  /*
+   * A lookup key must only be used for looking up instances within a map. For this to work, it implements an identical contract for
+   * hash code and equals as the WeakKey implementation. At the same time, the lookup key implementation does not extend WeakReference
+   * and avoids the overhead that a weak reference implies.
+   */
+
+  // can't use AutoClosable/try-with-resources as this project still supports Java 6
+<span class="fc" id="L143">  static final class LookupKey&lt;K&gt; {</span>
+
+    private K key;
+    private int hashCode;
+
+    @SuppressWarnings(&quot;OtelCanIgnoreReturnValueSuggester&quot;)
+    LookupKey&lt;K&gt; withValue(K key) {
+<span class="fc" id="L150">      this.key = key;</span>
+<span class="fc" id="L151">      hashCode = System.identityHashCode(key);</span>
+<span class="fc" id="L152">      return this;</span>
+    }
+
+    /** Failing to reset a lookup key can lead to memory leaks as the key is strongly referenced. */
+    void reset() {
+<span class="fc" id="L157">      key = null;</span>
+<span class="fc" id="L158">      hashCode = 0;</span>
+<span class="fc" id="L159">    }</span>
+
+    @Override
+    public boolean equals(@Nullable Object other) {
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">      if (other instanceof WeakConcurrentMap.LookupKey&lt;?&gt;) {</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        return ((LookupKey&lt;?&gt;) other).key == key;</span>
+      } else {
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">        return ((AbstractWeakConcurrentMap.WeakKey&lt;?&gt;) other).get() == key;</span>
+      }
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L172">      return hashCode;</span>
+    }
+  }
+
+  /**
+   * A {@link WeakConcurrentMap} where stale entries are removed as a side effect of interacting
+   * with this map.
+   *
+   * &lt;p&gt;This class is internal and is hence not for public use. Its APIs are unstable and can change
+   * at any time.
+   */
+<span class="fc" id="L183">  public static class WithInlinedExpunction&lt;K, V&gt; extends WeakConcurrentMap&lt;K, V&gt; {</span>
+
+    @Override
+    public V get(K key) {
+<span class="nc" id="L187">      expungeStaleEntries();</span>
+<span class="nc" id="L188">      return super.get(key);</span>
+    }
+
+    @Override
+    public V getIfPresent(K key) {
+<span class="fc" id="L193">      expungeStaleEntries();</span>
+<span class="fc" id="L194">      return super.getIfPresent(key);</span>
+    }
+
+    @Override
+    public boolean containsKey(K key) {
+<span class="nc" id="L199">      expungeStaleEntries();</span>
+<span class="nc" id="L200">      return super.containsKey(key);</span>
+    }
+
+    @Override
+    public V put(K key, V value) {
+<span class="fc" id="L205">      expungeStaleEntries();</span>
+<span class="fc" id="L206">      return super.put(key, value);</span>
+    }
+
+    @Override
+    public V putIfAbsent(K key, V value) {
+<span class="nc" id="L211">      expungeStaleEntries();</span>
+<span class="nc" id="L212">      return super.putIfAbsent(key, value);</span>
+    }
+
+    @Override
+    public V computeIfAbsent(K key, Function&lt;? super K, ? extends V&gt; mappingFunction) {
+<span class="fc" id="L217">      expungeStaleEntries();</span>
+<span class="fc" id="L218">      return super.computeIfAbsent(key, mappingFunction);</span>
+    }
+
+    @Override
+    public V remove(K key) {
+<span class="fc" id="L223">      expungeStaleEntries();</span>
+<span class="fc" id="L224">      return super.remove(key);</span>
+    }
+
+    @Override
+    public Iterator&lt;Map.Entry&lt;K, V&gt;&gt; iterator() {
+<span class="nc" id="L229">      expungeStaleEntries();</span>
+<span class="nc" id="L230">      return super.iterator();</span>
+    }
+
+    @Override
+    public int approximateSize() {
+<span class="fc" id="L235">      expungeStaleEntries();</span>
+<span class="fc" id="L236">      return super.approximateSize();</span>
+    }
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

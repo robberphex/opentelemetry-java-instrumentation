@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" tests="19" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:17" hostname="luyanbo-MBP.local" time="0.48">
+  <properties/>
+  <testcase name="server_error()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.234"/>
+  <testcase name="operationMetrics()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.04"/>
+  <testcase name="instrumentationVersion_default()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.013"/>
+  <testcase name="shouldNotAddInvalidLink()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.009"/>
+  <testcase name="client()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.044"/>
+  <testcase name="downstream_customSpanKind()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.01"/>
+  <testcase name="client_error()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.006"/>
+  <testcase name="shouldRetrieveSpanKeysFromAttributesExtractors()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.026"/>
+  <testcase name="server()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.007"/>
+  <testcase name="operationListeners()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.006"/>
+  <testcase name="client_parent()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.007"/>
+  <testcase name="shouldDisableInstrumenter()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.004"/>
+  <testcase name="server_parent()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.007"/>
+  <testcase name="upstream_customSpanKind()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.005"/>
+  <testcase name="instrumentationVersion_custom()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.005"/>
+  <testcase name="schemaUrl_computedFromExtractors()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.007"/>
+  <testcase name="schemaUrl_setExplicitly()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.007"/>
+  <testcase name="shouldUseContextCustomizer()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.005"/>
+  <testcase name="schemaUrl_schemaSetExplicitlyOverridesSchemaComputedFromExtractors()" classname="io.opentelemetry.instrumentation.api.instrumenter.InstrumenterTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

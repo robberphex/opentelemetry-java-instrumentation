@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LocalRootSpan.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.instrumenter</a> &gt; <span class="el_source">LocalRootSpan.java</span></div><h1>LocalRootSpan.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.instrumenter;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.ContextKey;
+import javax.annotation.Nullable;
+
+/**
+ * A local root span is a span that either does not have a parent span (it is the root span of a
+ * trace), or its parent span is a remote span (context was propagated from another application).
+ */
+public final class LocalRootSpan {
+
+<span class="fc" id="L20">  private static final ContextKey&lt;Span&gt; KEY =</span>
+<span class="fc" id="L21">      ContextKey.named(&quot;opentelemetry-traces-local-root-span&quot;);</span>
+
+  /**
+   * Returns the local root span from the current context or {@linkplain Span#getInvalid() invalid
+   * span} if there is no local root span.
+   */
+  public static Span current() {
+<span class="fc" id="L28">    return fromContext(Context.current());</span>
+  }
+
+  /**
+   * Returns the local root span from the given context or {@linkplain Span#getInvalid() invalid
+   * span} if there is no local root span in the context.
+   */
+  public static Span fromContext(Context context) {
+<span class="fc" id="L36">    Span span = fromContextOrNull(context);</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">    return span == null ? Span.getInvalid() : span;</span>
+  }
+
+  /**
+   * Returns the local root span from the given context or {@code null} if there is no local root
+   * span in the context.
+   */
+  @Nullable
+  public static Span fromContextOrNull(Context context) {
+<span class="fc" id="L46">    return context.get(KEY);</span>
+  }
+
+  static boolean isLocalRoot(Context parentContext) {
+<span class="fc" id="L50">    SpanContext spanContext = Span.fromContext(parentContext).getSpanContext();</span>
+<span class="fc bfc" id="L51" title="All 4 branches covered.">    return !spanContext.isValid() || spanContext.isRemote();</span>
+  }
+
+  static Context store(Context context, Span span) {
+<span class="fc" id="L55">    return context.with(KEY, span);</span>
+  }
+
+  private LocalRootSpan() {}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

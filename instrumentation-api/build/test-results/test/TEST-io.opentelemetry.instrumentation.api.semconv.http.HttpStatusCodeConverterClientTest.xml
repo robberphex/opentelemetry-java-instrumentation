@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" tests="64" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:20" hostname="luyanbo-MBP.local" time="0.08">
+  <properties/>
+  <testcase name="[1] 100, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[2] 101, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[3] 102, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[4] 103, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[5] 200, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[6] 201, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[7] 202, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[8] 203, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[9] 204, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[10] 205, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[11] 206, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[12] 207, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[13] 208, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[14] 226, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[15] 300, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[16] 301, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[17] 302, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[18] 303, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[19] 304, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[20] 305, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[21] 306, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[22] 307, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[23] 308, false" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[24] 400, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[25] 401, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[26] 403, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[27] 404, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[28] 405, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[29] 406, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[30] 407, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[31] 408, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[32] 409, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[33] 410, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[34] 411, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[35] 412, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[36] 413, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[37] 414, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[38] 415, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[39] 416, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[40] 417, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[41] 418, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[42] 421, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[43] 422, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[44] 423, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[45] 424, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[46] 425, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[47] 426, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[48] 428, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[49] 429, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[50] 431, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[51] 451, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[52] 500, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[53] 501, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[54] 502, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[55] 503, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[56] 504, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[57] 505, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[58] 506, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[59] 507, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[60] 508, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[61] 510, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.001"/>
+  <testcase name="[62] 511, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[63] 99, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <testcase name="[64] 600, true" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpStatusCodeConverterClientTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

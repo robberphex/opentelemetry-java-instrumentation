@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.internal.cache.CacheTest$StrongKeys" tests="1" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:19" hostname="luyanbo-MBP.local" time="0.035">
+  <properties/>
+  <testcase name="bounded()" classname="io.opentelemetry.instrumentation.api.internal.cache.CacheTest$StrongKeys" time="0.035"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

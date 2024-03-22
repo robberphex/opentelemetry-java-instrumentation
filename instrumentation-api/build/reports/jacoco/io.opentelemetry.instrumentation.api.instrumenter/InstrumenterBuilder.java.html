@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InstrumenterBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">instrumentation-api</a> &gt; <a href="index.source.html" class="el_package">io.opentelemetry.instrumentation.api.instrumenter</a> &gt; <span class="el_source">InstrumenterBuilder.java</span></div><h1>InstrumenterBuilder.java</h1><pre class="source lang-java linenums">/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.api.instrumenter;
+
+import static java.util.Objects.requireNonNull;
+import static java.util.logging.Level.WARNING;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.metrics.Meter;
+import io.opentelemetry.api.metrics.MeterBuilder;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.TracerBuilder;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.propagation.TextMapGetter;
+import io.opentelemetry.context.propagation.TextMapSetter;
+import io.opentelemetry.instrumentation.api.internal.ConfigPropertiesUtil;
+import io.opentelemetry.instrumentation.api.internal.EmbeddedInstrumentationProperties;
+import io.opentelemetry.instrumentation.api.internal.InstrumenterBuilderAccess;
+import io.opentelemetry.instrumentation.api.internal.InstrumenterUtil;
+import io.opentelemetry.instrumentation.api.internal.SchemaUrlProvider;
+import io.opentelemetry.instrumentation.api.internal.SpanKey;
+import io.opentelemetry.instrumentation.api.internal.SpanKeyProvider;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
+
+/**
+ * A builder of an {@link Instrumenter}.
+ *
+ * &lt;p&gt;Instrumentation libraries should generally expose their own builder with controls that are
+ * appropriate for that library and delegate to this class to create the {@link Instrumenter}.
+ */
+public final class InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; {
+
+<span class="fc" id="L45">  private static final Logger logger = Logger.getLogger(InstrumenterBuilder.class.getName());</span>
+
+<span class="fc" id="L47">  private static final SpanSuppressionStrategy spanSuppressionStrategy =</span>
+<span class="fc" id="L48">      SpanSuppressionStrategy.fromConfig(</span>
+<span class="fc" id="L49">          ConfigPropertiesUtil.getString(</span>
+              &quot;otel.instrumentation.experimental.span-suppression-strategy&quot;));
+
+  final OpenTelemetry openTelemetry;
+  final String instrumentationName;
+  final SpanNameExtractor&lt;? super REQUEST&gt; spanNameExtractor;
+
+<span class="fc" id="L56">  final List&lt;SpanLinksExtractor&lt;? super REQUEST&gt;&gt; spanLinksExtractors = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L57">  final List&lt;AttributesExtractor&lt;? super REQUEST, ? super RESPONSE&gt;&gt; attributesExtractors =</span>
+      new ArrayList&lt;&gt;();
+<span class="fc" id="L59">  final List&lt;ContextCustomizer&lt;? super REQUEST&gt;&gt; contextCustomizers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L60">  private final List&lt;OperationListener&gt; operationListeners = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L61">  private final List&lt;OperationMetrics&gt; operationMetrics = new ArrayList&lt;&gt;();</span>
+
+  @Nullable private String instrumentationVersion;
+<span class="fc" id="L64">  @Nullable private String schemaUrl = null;</span>
+<span class="fc" id="L65">  SpanKindExtractor&lt;? super REQUEST&gt; spanKindExtractor = SpanKindExtractor.alwaysInternal();</span>
+<span class="fc" id="L66">  SpanStatusExtractor&lt;? super REQUEST, ? super RESPONSE&gt; spanStatusExtractor =</span>
+<span class="fc" id="L67">      SpanStatusExtractor.getDefault();</span>
+<span class="fc" id="L68">  ErrorCauseExtractor errorCauseExtractor = ErrorCauseExtractor.getDefault();</span>
+<span class="fc" id="L69">  boolean enabled = true;</span>
+
+  InstrumenterBuilder(
+      OpenTelemetry openTelemetry,
+      String instrumentationName,
+<span class="fc" id="L74">      SpanNameExtractor&lt;? super REQUEST&gt; spanNameExtractor) {</span>
+<span class="fc" id="L75">    this.openTelemetry = openTelemetry;</span>
+<span class="fc" id="L76">    this.instrumentationName = instrumentationName;</span>
+<span class="fc" id="L77">    this.spanNameExtractor = spanNameExtractor;</span>
+<span class="fc" id="L78">    this.instrumentationVersion =</span>
+<span class="fc" id="L79">        EmbeddedInstrumentationProperties.findVersion(instrumentationName);</span>
+<span class="fc" id="L80">  }</span>
+
+  /**
+   * Sets the instrumentation version that will be associated with all telemetry produced by this
+   * {@link Instrumenter}.
+   *
+   * @param instrumentationVersion is the version of the instrumentation library, not the version of
+   *     the instrument&lt;b&gt;ed&lt;/b&gt; library.
+   */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; setInstrumentationVersion(
+      String instrumentationVersion) {
+<span class="fc" id="L92">    this.instrumentationVersion = requireNonNull(instrumentationVersion, &quot;instrumentationVersion&quot;);</span>
+<span class="fc" id="L93">    return this;</span>
+  }
+
+  /**
+   * Sets the OpenTelemetry schema URL that will be associated with all telemetry produced by this
+   * {@link Instrumenter}.
+   */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; setSchemaUrl(String schemaUrl) {
+<span class="fc" id="L102">    this.schemaUrl = requireNonNull(schemaUrl, &quot;schemaUrl&quot;);</span>
+<span class="fc" id="L103">    return this;</span>
+  }
+
+  /**
+   * Sets the {@link SpanStatusExtractor} that will determine the {@link StatusCode} for a response.
+   */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; setSpanStatusExtractor(
+      SpanStatusExtractor&lt;? super REQUEST, ? super RESPONSE&gt; spanStatusExtractor) {
+<span class="nc" id="L112">    this.spanStatusExtractor = requireNonNull(spanStatusExtractor, &quot;spanStatusExtractor&quot;);</span>
+<span class="nc" id="L113">    return this;</span>
+  }
+
+  /**
+   * Adds a {@link AttributesExtractor} that will extract attributes from requests and responses.
+   */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; addAttributesExtractor(
+      AttributesExtractor&lt;? super REQUEST, ? super RESPONSE&gt; attributesExtractor) {
+<span class="fc" id="L122">    this.attributesExtractors.add(requireNonNull(attributesExtractor, &quot;attributesExtractor&quot;));</span>
+<span class="fc" id="L123">    return this;</span>
+  }
+
+  /** Adds {@link AttributesExtractor}s that will extract attributes from requests and responses. */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; addAttributesExtractors(
+      Iterable&lt;? extends AttributesExtractor&lt;? super REQUEST, ? super RESPONSE&gt;&gt;
+          attributesExtractors) {
+<span class="nc" id="L131">    attributesExtractors.forEach(this::addAttributesExtractor);</span>
+<span class="nc" id="L132">    return this;</span>
+  }
+
+  /** Adds a {@link SpanLinksExtractor} that will extract span links from requests. */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; addSpanLinksExtractor(
+      SpanLinksExtractor&lt;REQUEST&gt; spanLinksExtractor) {
+<span class="fc" id="L139">    spanLinksExtractors.add(requireNonNull(spanLinksExtractor, &quot;spanLinksExtractor&quot;));</span>
+<span class="fc" id="L140">    return this;</span>
+  }
+
+  /**
+   * Adds a {@link ContextCustomizer} that will customize the context during {@link
+   * Instrumenter#start(Context, Object)}.
+   */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; addContextCustomizer(
+      ContextCustomizer&lt;? super REQUEST&gt; contextCustomizer) {
+<span class="fc" id="L150">    contextCustomizers.add(requireNonNull(contextCustomizer, &quot;contextCustomizer&quot;));</span>
+<span class="fc" id="L151">    return this;</span>
+  }
+
+  /**
+   * Adds a {@link OperationListener} that will be called when an instrumented operation starts and
+   * ends.
+   */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; addOperationListener(OperationListener listener) {
+<span class="fc" id="L160">    operationListeners.add(requireNonNull(listener, &quot;operationListener&quot;));</span>
+<span class="fc" id="L161">    return this;</span>
+  }
+
+  /**
+   * Adds a {@link OperationMetrics} that will produce a {@link OperationListener} capturing the
+   * requests processing metrics.
+   */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; addOperationMetrics(OperationMetrics factory) {
+<span class="fc" id="L170">    operationMetrics.add(requireNonNull(factory, &quot;operationMetrics&quot;));</span>
+<span class="fc" id="L171">    return this;</span>
+  }
+
+  /**
+   * Sets the {@link ErrorCauseExtractor} that will extract the root cause of an error thrown during
+   * request processing.
+   */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; setErrorCauseExtractor(
+      ErrorCauseExtractor errorCauseExtractor) {
+<span class="nc" id="L181">    this.errorCauseExtractor = requireNonNull(errorCauseExtractor, &quot;errorCauseExtractor&quot;);</span>
+<span class="nc" id="L182">    return this;</span>
+  }
+
+  /**
+   * Allows enabling/disabling the {@link Instrumenter} based on the {@code enabled} value passed as
+   * parameter. All instrumenters are enabled by default.
+   */
+  @CanIgnoreReturnValue
+  public InstrumenterBuilder&lt;REQUEST, RESPONSE&gt; setEnabled(boolean enabled) {
+<span class="fc" id="L191">    this.enabled = enabled;</span>
+<span class="fc" id="L192">    return this;</span>
+  }
+
+  /**
+   * Returns a new {@link Instrumenter} which will create {@linkplain SpanKind#CLIENT client} spans
+   * and inject context into requests with the passed {@link TextMapSetter}.
+   */
+  public Instrumenter&lt;REQUEST, RESPONSE&gt; buildClientInstrumenter(TextMapSetter&lt;REQUEST&gt; setter) {
+<span class="fc" id="L200">    return buildInstrumenter(</span>
+<span class="fc" id="L201">        InstrumenterConstructor.propagatingToDownstream(requireNonNull(setter, &quot;setter&quot;)),</span>
+<span class="fc" id="L202">        SpanKindExtractor.alwaysClient());</span>
+  }
+
+  /**
+   * Returns a new {@link Instrumenter} which will create {@linkplain SpanKind#SERVER server} spans
+   * and extract context from requests with the passed {@link TextMapGetter}.
+   */
+  public Instrumenter&lt;REQUEST, RESPONSE&gt; buildServerInstrumenter(TextMapGetter&lt;REQUEST&gt; getter) {
+<span class="fc" id="L210">    return buildInstrumenter(</span>
+<span class="fc" id="L211">        InstrumenterConstructor.propagatingFromUpstream(requireNonNull(getter, &quot;getter&quot;)),</span>
+<span class="fc" id="L212">        SpanKindExtractor.alwaysServer());</span>
+  }
+
+  /**
+   * Returns a new {@link Instrumenter} which will create {@linkplain SpanKind#PRODUCER producer}
+   * spans and inject context into requests with the passed {@link TextMapSetter}.
+   */
+  public Instrumenter&lt;REQUEST, RESPONSE&gt; buildProducerInstrumenter(TextMapSetter&lt;REQUEST&gt; setter) {
+<span class="nc" id="L220">    return buildInstrumenter(</span>
+<span class="nc" id="L221">        InstrumenterConstructor.propagatingToDownstream(requireNonNull(setter, &quot;setter&quot;)),</span>
+<span class="nc" id="L222">        SpanKindExtractor.alwaysProducer());</span>
+  }
+
+  /**
+   * Returns a new {@link Instrumenter} which will create {@linkplain SpanKind#CONSUMER consumer}
+   * spans and extract context from requests with the passed {@link TextMapGetter}.
+   */
+  public Instrumenter&lt;REQUEST, RESPONSE&gt; buildConsumerInstrumenter(TextMapGetter&lt;REQUEST&gt; getter) {
+<span class="nc" id="L230">    return buildInstrumenter(</span>
+<span class="nc" id="L231">        InstrumenterConstructor.propagatingFromUpstream(requireNonNull(getter, &quot;getter&quot;)),</span>
+<span class="nc" id="L232">        SpanKindExtractor.alwaysConsumer());</span>
+  }
+
+  /**
+   * Returns a new {@link Instrumenter} which will create spans with kind determined by the passed
+   * {@link SpanKindExtractor} and extract context from requests with the passed {@link
+   * TextMapGetter}.
+   */
+  // TODO: candidate for public API
+  Instrumenter&lt;REQUEST, RESPONSE&gt; buildUpstreamInstrumenter(
+      TextMapGetter&lt;REQUEST&gt; getter, SpanKindExtractor&lt;REQUEST&gt; spanKindExtractor) {
+<span class="fc" id="L243">    return buildInstrumenter(</span>
+<span class="fc" id="L244">        InstrumenterConstructor.propagatingFromUpstream(requireNonNull(getter, &quot;getter&quot;)),</span>
+        spanKindExtractor);
+  }
+
+  /**
+   * Returns a new {@link Instrumenter} which will create spans with kind determined by the passed
+   * {@link SpanKindExtractor} and inject context into requests with the passed {@link
+   * TextMapSetter}.
+   */
+  // TODO: candidate for public API
+  Instrumenter&lt;REQUEST, RESPONSE&gt; buildDownstreamInstrumenter(
+      TextMapSetter&lt;REQUEST&gt; setter, SpanKindExtractor&lt;REQUEST&gt; spanKindExtractor) {
+<span class="fc" id="L256">    return buildInstrumenter(</span>
+<span class="fc" id="L257">        InstrumenterConstructor.propagatingToDownstream(requireNonNull(setter, &quot;setter&quot;)),</span>
+        spanKindExtractor);
+  }
+
+  /**
+   * Returns a new {@link Instrumenter} which will create {@linkplain SpanKind#INTERNAL internal}
+   * spans and do no context propagation.
+   */
+  public Instrumenter&lt;REQUEST, RESPONSE&gt; buildInstrumenter() {
+<span class="fc" id="L266">    return buildInstrumenter(</span>
+<span class="fc" id="L267">        InstrumenterConstructor.internal(), SpanKindExtractor.alwaysInternal());</span>
+  }
+
+  /**
+   * Returns a new {@link Instrumenter} which will create spans with kind determined by the passed
+   * {@link SpanKindExtractor} and do no context propagation.
+   */
+  public Instrumenter&lt;REQUEST, RESPONSE&gt; buildInstrumenter(
+      SpanKindExtractor&lt;? super REQUEST&gt; spanKindExtractor) {
+<span class="fc" id="L276">    return buildInstrumenter(</span>
+<span class="fc" id="L277">        InstrumenterConstructor.internal(), requireNonNull(spanKindExtractor, &quot;spanKindExtractor&quot;));</span>
+  }
+
+  private Instrumenter&lt;REQUEST, RESPONSE&gt; buildInstrumenter(
+      InstrumenterConstructor&lt;REQUEST, RESPONSE&gt; constructor,
+      SpanKindExtractor&lt;? super REQUEST&gt; spanKindExtractor) {
+<span class="fc" id="L283">    this.spanKindExtractor = spanKindExtractor;</span>
+<span class="fc" id="L284">    return constructor.create(this);</span>
+  }
+
+  Tracer buildTracer() {
+<span class="fc" id="L288">    TracerBuilder tracerBuilder =</span>
+<span class="fc" id="L289">        openTelemetry.getTracerProvider().tracerBuilder(instrumentationName);</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">    if (instrumentationVersion != null) {</span>
+<span class="fc" id="L291">      tracerBuilder.setInstrumentationVersion(instrumentationVersion);</span>
+    }
+<span class="fc" id="L293">    String schemaUrl = getSchemaUrl();</span>
+<span class="fc bfc" id="L294" title="All 2 branches covered.">    if (schemaUrl != null) {</span>
+<span class="fc" id="L295">      tracerBuilder.setSchemaUrl(schemaUrl);</span>
+    }
+<span class="fc" id="L297">    return tracerBuilder.build();</span>
+  }
+
+  List&lt;OperationListener&gt; buildOperationListeners() {
+    // just copy the listeners list if there are no metrics registered
+<span class="fc bfc" id="L302" title="All 2 branches covered.">    if (operationMetrics.isEmpty()) {</span>
+<span class="fc" id="L303">      return new ArrayList&lt;&gt;(operationListeners);</span>
+    }
+
+<span class="fc" id="L306">    List&lt;OperationListener&gt; listeners =</span>
+<span class="fc" id="L307">        new ArrayList&lt;&gt;(operationListeners.size() + operationMetrics.size());</span>
+<span class="fc" id="L308">    listeners.addAll(operationListeners);</span>
+
+<span class="fc" id="L310">    MeterBuilder meterBuilder = openTelemetry.getMeterProvider().meterBuilder(instrumentationName);</span>
+<span class="pc bpc" id="L311" title="1 of 2 branches missed.">    if (instrumentationVersion != null) {</span>
+<span class="nc" id="L312">      meterBuilder.setInstrumentationVersion(instrumentationVersion);</span>
+    }
+<span class="fc" id="L314">    String schemaUrl = getSchemaUrl();</span>
+<span class="pc bpc" id="L315" title="1 of 2 branches missed.">    if (schemaUrl != null) {</span>
+<span class="nc" id="L316">      meterBuilder.setSchemaUrl(schemaUrl);</span>
+    }
+<span class="fc" id="L318">    Meter meter = meterBuilder.build();</span>
+<span class="fc bfc" id="L319" title="All 2 branches covered.">    for (OperationMetrics factory : operationMetrics) {</span>
+<span class="fc" id="L320">      listeners.add(factory.create(meter));</span>
+<span class="fc" id="L321">    }</span>
+
+<span class="fc" id="L323">    return listeners;</span>
+  }
+
+  @Nullable
+  private String getSchemaUrl() {
+    // url set explicitly overrides url computed using attributes extractors
+<span class="fc bfc" id="L329" title="All 2 branches covered.">    if (schemaUrl != null) {</span>
+<span class="fc" id="L330">      return schemaUrl;</span>
+    }
+<span class="fc" id="L332">    Set&lt;String&gt; computedSchemaUrls =</span>
+<span class="fc" id="L333">        attributesExtractors.stream()</span>
+<span class="fc" id="L334">            .filter(SchemaUrlProvider.class::isInstance)</span>
+<span class="fc" id="L335">            .map(SchemaUrlProvider.class::cast)</span>
+<span class="fc" id="L336">            .flatMap(</span>
+                provider -&gt; {
+<span class="fc" id="L338">                  String url = provider.internalGetSchemaUrl();</span>
+<span class="pc bpc" id="L339" title="1 of 2 branches missed.">                  return url == null ? Stream.of() : Stream.of(url);</span>
+                })
+<span class="fc" id="L341">            .collect(Collectors.toSet());</span>
+<span class="pc bpc" id="L342" title="1 of 3 branches missed.">    switch (computedSchemaUrls.size()) {</span>
+      case 0:
+<span class="fc" id="L344">        return null;</span>
+      case 1:
+<span class="fc" id="L346">        return computedSchemaUrls.iterator().next();</span>
+      default:
+<span class="nc" id="L348">        logger.log(</span>
+            WARNING,
+            &quot;Multiple schemaUrls were detected: {0}. The built Instrumenter will have no schemaUrl assigned.&quot;,
+            computedSchemaUrls);
+<span class="nc" id="L352">        return null;</span>
+    }
+  }
+
+  SpanSuppressor buildSpanSuppressor() {
+<span class="fc" id="L357">    return new SpanSuppressors.ByContextKey(</span>
+<span class="fc" id="L358">        spanSuppressionStrategy.create(getSpanKeysFromAttributesExtractors()));</span>
+  }
+
+  private Set&lt;SpanKey&gt; getSpanKeysFromAttributesExtractors() {
+<span class="fc" id="L362">    return attributesExtractors.stream()</span>
+<span class="fc" id="L363">        .filter(SpanKeyProvider.class::isInstance)</span>
+<span class="fc" id="L364">        .map(SpanKeyProvider.class::cast)</span>
+<span class="fc" id="L365">        .flatMap(</span>
+            provider -&gt; {
+<span class="fc" id="L367">              SpanKey spanKey = provider.internalGetSpanKey();</span>
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">              return spanKey == null ? Stream.of() : Stream.of(spanKey);</span>
+            })
+<span class="fc" id="L370">        .collect(Collectors.toSet());</span>
+  }
+
+  private interface InstrumenterConstructor&lt;RQ, RS&gt; {
+    Instrumenter&lt;RQ, RS&gt; create(InstrumenterBuilder&lt;RQ, RS&gt; builder);
+
+    static &lt;RQ, RS&gt; InstrumenterConstructor&lt;RQ, RS&gt; internal() {
+<span class="fc" id="L377">      return Instrumenter::new;</span>
+    }
+
+    static &lt;RQ, RS&gt; InstrumenterConstructor&lt;RQ, RS&gt; propagatingToDownstream(
+        TextMapSetter&lt;RQ&gt; setter) {
+<span class="fc" id="L382">      return builder -&gt; new PropagatingToDownstreamInstrumenter&lt;&gt;(builder, setter);</span>
+    }
+
+    static &lt;RQ, RS&gt; InstrumenterConstructor&lt;RQ, RS&gt; propagatingFromUpstream(
+        TextMapGetter&lt;RQ&gt; getter) {
+<span class="fc" id="L387">      return builder -&gt; new PropagatingFromUpstreamInstrumenter&lt;&gt;(builder, getter);</span>
+    }
+  }
+
+  static {
+<span class="fc" id="L392">    InstrumenterUtil.setInstrumenterBuilderAccess(</span>
+<span class="fc" id="L393">        new InstrumenterBuilderAccess() {</span>
+          @Override
+          public &lt;RQ, RS&gt; Instrumenter&lt;RQ, RS&gt; buildUpstreamInstrumenter(
+              InstrumenterBuilder&lt;RQ, RS&gt; builder,
+              TextMapGetter&lt;RQ&gt; getter,
+              SpanKindExtractor&lt;RQ&gt; spanKindExtractor) {
+<span class="nc" id="L399">            return builder.buildUpstreamInstrumenter(getter, spanKindExtractor);</span>
+          }
+
+          @Override
+          public &lt;RQ, RS&gt; Instrumenter&lt;RQ, RS&gt; buildDownstreamInstrumenter(
+              InstrumenterBuilder&lt;RQ, RS&gt; builder,
+              TextMapSetter&lt;RQ&gt; setter,
+              SpanKindExtractor&lt;RQ&gt; spanKindExtractor) {
+<span class="nc" id="L407">            return builder.buildDownstreamInstrumenter(setter, spanKindExtractor);</span>
+          }
+        });
+<span class="fc" id="L410">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

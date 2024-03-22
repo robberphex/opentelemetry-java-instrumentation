@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" tests="56" skipped="0" failures="0" errors="0" timestamp="2024-03-22T12:44:20" hostname="luyanbo-MBP.local" time="0.262">
+  <properties/>
+  <testcase name="[1] [], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.015"/>
+  <testcase name="[2] [for=], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[3] [for=;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[4] [for=&quot;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[5] [for=&quot;&quot;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.005"/>
+  <testcase name="[6] [for=&quot;1.2.3.4], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[7] [for=&quot;[::1]], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[8] [for=[::1], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[9] [for=&quot;[::1&quot;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[10] [for=&quot;[::1&quot;]], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[11] [by=1.2.3.4, test=abc], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[12] [for=[::1]], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[13] [For=[::1]], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[14] [for=&quot;[::1]&quot;:42], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.001"/>
+  <testcase name="[15] [for=[::1]:42], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[16] [for=&quot;[::1]:42&quot;], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[17] [for=[::1], for=1.2.3.4], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[18] [for=[::1]; for=1.2.3.4:42], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[19] [for=[::1]:42abc], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[20] [for=[::1]:abc], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[21] [for=1.2.3.4], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[22] [FOR=1.2.3.4], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[23] [for=1.2.3.4, :42], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[24] [for=1.2.3.4;proto=https;by=4.3.2.1], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[25] [for=1.2.3.4:42], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[26] [for=1.2.3.4:42abc], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[27] [for=1.2.3.4:abc], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[28] [for=1.2.3.4; for=4.3.2.1:42], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[29] [proto=https, for=1.2.3.4, for=[::1]:42], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[1] [], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[2] [;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[3] [&quot;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[4] [&quot;&quot;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[5] [&quot;1.2.3.4], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[6] [&quot;[::1]], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[7] [[::1], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[8] [&quot;[::1&quot;], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[9] [&quot;[::1&quot;]], null" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[10] [[::1]], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[11] [&quot;[::1]&quot;:42], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[12] [[::1]:42], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[13] [&quot;[::1]:42&quot;], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[14] [[::1],1.2.3.4], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[15] [[::1];1.2.3.4:42], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[16] [[::1]:42abc], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[17] [[::1]:abc], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[18] [1.2.3.4], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.002"/>
+  <testcase name="[19] [1.2.3.4, :42], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[20] [1.2.3.4,4.3.2.1], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[21] [1.2.3.4:42], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[22] [1.2.3.4:42abc], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.004"/>
+  <testcase name="[23] [1.2.3.4:abc], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[24] [::1], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[25] [::1,::2,1.2.3.4], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[26] [::1;::2;1.2.3.4], ::1" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <testcase name="[27] [1.2.3.4, ::1], 1.2.3.4" classname="io.opentelemetry.instrumentation.api.semconv.http.HttpServerAddressAndPortExtractorTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
