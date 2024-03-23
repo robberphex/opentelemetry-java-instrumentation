@@ -2,6 +2,7 @@ import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
   id("otel.java-conventions")
+  id("otel.jacoco-conventions")
   id("otel.publish-conventions")
   id("otel.jmh-conventions")
 }
@@ -132,4 +133,12 @@ configurations {
       exclude("org.mockito", "mockito-inline")
     }
   }
+}
+
+tasks.test {
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test)
 }
