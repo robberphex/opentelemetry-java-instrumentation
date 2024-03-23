@@ -1,6 +1,8 @@
 plugins {
   id("otel.java-conventions")
   id("otel.publish-conventions")
+
+  jacoco
 }
 
 description = "OpenTelemetry Javaagent testing commons"
@@ -78,4 +80,12 @@ tasks {
   javadoc {
     enabled = false
   }
+}
+
+tasks.test {
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test)
 }

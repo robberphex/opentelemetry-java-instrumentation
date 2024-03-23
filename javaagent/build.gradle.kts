@@ -8,6 +8,8 @@ plugins {
   id("otel.java-conventions")
   id("otel.publish-conventions")
   id("io.opentelemetry.instrumentation.javaagent-shadowing")
+
+  jacoco
 }
 
 description = "OpenTelemetry Javaagent"
@@ -328,4 +330,12 @@ class JavaagentProvider(
   override fun asArguments(): Iterable<String> = listOf(
     "-javaagent:${file(agentJar).absolutePath}",
   )
+}
+
+tasks.test {
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test)
 }

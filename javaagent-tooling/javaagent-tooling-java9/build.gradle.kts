@@ -1,6 +1,8 @@
 plugins {
   id("otel.java-conventions")
   id("otel.publish-conventions")
+
+  jacoco
 }
 
 group = "io.opentelemetry.javaagent"
@@ -29,4 +31,12 @@ tasks {
       compilerArgs.add("-Xlint:none")
     }
   }
+}
+
+tasks.test {
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test)
 }
