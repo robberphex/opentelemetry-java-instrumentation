@@ -18,6 +18,10 @@ on:
     secrets:
       GRADLE_ENTERPRISE_ACCESS_KEY:
         required: false
+      GE_CACHE_USERNAME:
+        required: false
+      GE_CACHE_PASSWORD:
+        required: false
 
 permissions:
   contents: read
@@ -38,9 +42,11 @@ jobs:
           java-version: 17.0.6
 
       - name: Spotless
-        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+        uses: gradle/gradle-build-action@29c0906b64b8fc82467890bfb7a0a7ef34bda89e # v3.1.0
         env:
           GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+          GE_CACHE_USERNAME: ${{ secrets.GE_CACHE_USERNAME }}
+          GE_CACHE_PASSWORD: ${{ secrets.GE_CACHE_PASSWORD }}
         with:
           arguments: spotlessCheck ${{ inputs.no-build-cache && '--no-build-cache' || '' }}
           cache-read-only: ${{ inputs.cache-read-only }}
@@ -69,9 +75,11 @@ jobs:
           java-version: 17.0.6
 
       - name: Generate license report
-        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+        uses: gradle/gradle-build-action@29c0906b64b8fc82467890bfb7a0a7ef34bda89e # v3.1.0
         env:
           GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+          GE_CACHE_USERNAME: ${{ secrets.GE_CACHE_USERNAME }}
+          GE_CACHE_PASSWORD: ${{ secrets.GE_CACHE_PASSWORD }}
         with:
           # currently ignoring inputs.no-build-cache and always running with --no-build-cache
           # see https://github.com/jk1/Gradle-License-Report/issues/231
@@ -141,9 +149,11 @@ jobs:
           sed -i "s/org.gradle.jvmargs=/org.gradle.jvmargs=-Xmx3g /" gradle.properties
 
       - name: Build
-        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+        uses: gradle/gradle-build-action@29c0906b64b8fc82467890bfb7a0a7ef34bda89e # v3.1.0
         env:
           GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+          GE_CACHE_USERNAME: ${{ secrets.GE_CACHE_USERNAME }}
+          GE_CACHE_PASSWORD: ${{ secrets.GE_CACHE_PASSWORD }}
         with:
           # javadoc task fails sporadically fetching https://docs.oracle.com/javase/8/docs/api/
           arguments: check -x javadoc -x spotlessCheck -PskipTests=true ${{ inputs.no-build-cache && '--no-build-cache' || '' }}
@@ -178,13 +188,10 @@ jobs:
     strategy:
       matrix:
         test-java-version:
-          - 8
-          - 11
           - 17
           - 21
         vm:
           - hotspot
-          - openj9
         test-partition:
           - 0
           - 1
@@ -234,7 +241,9 @@ jobs:
       - name: List tests
         env:
           GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
-        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+          GE_CACHE_USERNAME: ${{ secrets.GE_CACHE_USERNAME }}
+          GE_CACHE_PASSWORD: ${{ secrets.GE_CACHE_PASSWORD }}
+        uses: gradle/gradle-build-action@29c0906b64b8fc82467890bfb7a0a7ef34bda89e # v3.1.0
         with:
           # "check" is needed to activate all tests for listing purposes
           # listTestsInPartition writes test tasks that apply to the given partition to a file named
@@ -252,7 +261,9 @@ jobs:
       - name: Test
         env:
           GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
-        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+          GE_CACHE_USERNAME: ${{ secrets.GE_CACHE_USERNAME }}
+          GE_CACHE_PASSWORD: ${{ secrets.GE_CACHE_PASSWORD }}
+        uses: gradle/gradle-build-action@29c0906b64b8fc82467890bfb7a0a7ef34bda89e # v3.1.0
         with:
           # spotless is checked separately since it's a common source of failure
           arguments: >
@@ -288,81 +299,10 @@ jobs:
             **/jitdump.*.dmp
           if-no-files-found: ignore
 
-  smoke-test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os:
-          - windows-latest
-          - ubuntu-latest
-        smoke-test-suite:
-          - jetty
-          - liberty
-          - payara
-          - tomcat
-          - tomee
-          - websphere
-          - wildfly
-          - other
-        exclude:
-          - os: ${{ inputs.skip-windows-smoke-tests && 'windows-latest' || '' }}
-          - os: windows-latest
-            smoke-test-suite: websphere
-      fail-fast: false
-    steps:
-      - name: Support long paths
-        run: git config --system core.longpaths true
-        if: matrix.os == 'windows-latest'
-
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-
-      - name: Free disk space
-        run: .github/scripts/gha-free-disk-space.sh
-
-      - name: Set up JDK for running Gradle
-        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
         with:
-          distribution: temurin
-          java-version: 17.0.6
-
-      - name: Set up Gradle cache
-        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
-        with:
-          # only push cache for one matrix option per OS since github action cache space is limited
-          cache-read-only: ${{ inputs.cache-read-only || matrix.smoke-test-suite != 'tomcat' }}
-          # gradle enterprise is used for the build cache
-          gradle-home-cache-excludes: caches/build-cache-1
-
-      - name: Build
-        env:
-          GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
-        # running suite "none" compiles everything needed by smoke tests without executing any tests
-        run: ./gradlew :smoke-tests:test -PsmokeTestSuite=none --no-daemon ${{ inputs.no-build-cache && ' --no-build-cache' || '' }}
-
-      - name: Test
-        env:
-          GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
-        run: ./gradlew :smoke-tests:test -PsmokeTestSuite=${{ matrix.smoke-test-suite }}${{ inputs.no-build-cache && ' --no-build-cache' || '' }}
-
-      - name: Upload jvm crash dump files if any
-        if: failure()
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
-        with:
-          name: javacore-smoke-test-${{ matrix.smoke-test-suite }}-${{ matrix.os }}
-          # we expect crash dumps either in root director or in smoke-tests
-          # not using **/ here because actions/upload-artifact fails with long paths https://github.com/actions/upload-artifact/issues/309
-          path: |
-            hs_err_pid*.log
-            smoke-tests/hs_err_pid*.log
-            javacore.*.txt
-            smoke-tests/javacore.*.txt
-            Snap.*.trc
-            smoke-tests/Snap.*.trc
-            core.*.dmp
-            smoke-tests/core.*.dmp
-            jitdump.*.dmp
-            smoke-tests/jitdump.*.dmp
-          if-no-files-found: ignore
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   gradle-plugins:
     runs-on: ubuntu-latest
@@ -379,7 +319,7 @@ jobs:
           java-version: 17.0.6
 
       - name: Build
-        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+        uses: gradle/gradle-build-action@29c0906b64b8fc82467890bfb7a0a7ef34bda89e # v3.1.0
         with:
           arguments: build ${{ inputs.no-build-cache && '--no-build-cache' || '' }}
           build-root-directory: gradle-plugins
@@ -400,7 +340,7 @@ jobs:
           java-version: 17.0.6
 
       - name: Set up Gradle cache
-        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+        uses: gradle/gradle-build-action@29c0906b64b8fc82467890bfb7a0a7ef34bda89e # v3.1.0
         with:
           cache-read-only: ${{ inputs.cache-read-only }}
 
