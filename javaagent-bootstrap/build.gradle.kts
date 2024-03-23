@@ -1,6 +1,7 @@
 plugins {
   id("otel.java-conventions")
   id("otel.publish-conventions")
+  id("otel.jacoco-conventions")
 }
 
 group = "io.opentelemetry.javaagent"
@@ -15,4 +16,12 @@ tasks.withType<Test>().configureEach {
   // required on jdk17
   jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
   jvmArgs("-XX:+IgnoreUnrecognizedVMOptions")
+}
+
+tasks.test {
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test)
 }
