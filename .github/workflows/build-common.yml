@@ -303,6 +303,8 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           verbose: true
+          files:
+            instrumentation-api/build/reports/jacoco/test/jacocoTestReport.xml
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Uploading dist
         uses: actions/upload-artifact@v2
