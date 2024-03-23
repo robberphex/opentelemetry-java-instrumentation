@@ -302,13 +302,14 @@ jobs:
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
+          verbose: true
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Uploading dist
         uses: actions/upload-artifact@v2
         with:
           name: artefact
           path: ./instrumentation-api/build/reports/jacoco/
-      - run: ls instrumentation-api/build/reports/jacoco/
+      - run: ls instrumentation-api/build/reports/jacoco/test/
 
   gradle-plugins:
     runs-on: ubuntu-latest
