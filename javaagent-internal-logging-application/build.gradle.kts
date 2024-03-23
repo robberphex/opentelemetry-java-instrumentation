@@ -1,5 +1,6 @@
 plugins {
   id("otel.java-conventions")
+  id("otel.jacoco-conventions")
   id("otel.publish-conventions")
 }
 
@@ -22,4 +23,12 @@ dependencies {
 
   compileOnly("com.google.auto.value:auto-value-annotations")
   annotationProcessor("com.google.auto.value:auto-value")
+}
+
+tasks.test {
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test)
 }
