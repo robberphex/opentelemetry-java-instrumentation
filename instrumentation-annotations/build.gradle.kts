@@ -1,5 +1,6 @@
 plugins {
   id("otel.java-conventions")
+  id("otel.jacoco-conventions")
   id("otel.japicmp-conventions")
   id("otel.publish-conventions")
 
@@ -10,4 +11,12 @@ group = "io.opentelemetry.instrumentation"
 
 dependencies {
   api("io.opentelemetry:opentelemetry-api")
+}
+
+tasks.test {
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test)
 }

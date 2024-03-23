@@ -19,3 +19,11 @@ dependencies {
   testImplementation(project(":testing-common"))
   testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
 }
+
+tasks.test {
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test)
+}
